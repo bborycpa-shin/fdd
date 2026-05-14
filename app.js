@@ -79,7 +79,8 @@ function renderProjects(projects) {
           <p class="text-[10px] text-slate-500 mt-0.5">${formatDate(p.created_at)}</p>
         </div>
       </button>
-      <button class="project-delete text-slate-400 active:text-red-500 px-1.5 py-1 text-base shrink-0 self-center" data-id="${p.id}" data-name="${escapeHtml(p.name)}" aria-label="프로젝트 삭제">🗑</button>
+      <button class="project-rename text-slate-400 active:text-blue-600 px-1 py-1 text-sm shrink-0 self-center" data-id="${p.id}" data-name="${escapeHtml(p.name)}" aria-label="이름 바꾸기">✏</button>
+      <button class="project-delete text-slate-400 active:text-red-500 px-1 py-1 text-base shrink-0 self-center" data-id="${p.id}" data-name="${escapeHtml(p.name)}" aria-label="프로젝트 삭제">🗑</button>
     </div>
   `;
     })
@@ -89,6 +90,27 @@ function renderProjects(projects) {
     btn.addEventListener("click", () => {
       const id = btn.dataset.id;
       location.href = `/project.html?id=${encodeURIComponent(id)}`;
+    });
+  });
+
+  projectList.querySelectorAll(".project-rename").forEach((btn) => {
+    btn.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.id;
+      const current = btn.dataset.name;
+      const newName = prompt("새 프로젝트 이름을 입력해주세요", current);
+      if (!newName || !newName.trim() || newName.trim() === current) return;
+      try {
+        const res = await fetch(`/api/projects/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: newName.trim() }),
+        });
+        if (!res.ok) throw new Error();
+        await loadProjects();
+      } catch (e) {
+        alert("이름 변경 실패");
+      }
     });
   });
 

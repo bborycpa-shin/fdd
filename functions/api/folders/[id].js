@@ -1,3 +1,30 @@
+export async function onRequestPatch({ params, request, env }) {
+  const id = params.id;
+
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return new Response("Invalid JSON", { status: 400 });
+  }
+
+  const newName = String(body.name || "").trim();
+  if (!newName) return new Response("name required", { status: 400 });
+  if (newName.length > 100)
+    return new Response("name too long", { status: 400 });
+
+  const folder = await env.DB.prepare("SELECT id FROM folders WHERE id = ?")
+    .bind(id)
+    .first();
+  if (!folder) return new Response("Folder not found", { status: 404 });
+
+  await env.DB.prepare("UPDATE folders SET name = ? WHERE id = ?")
+    .bind(newName, id)
+    .run();
+
+  return new Response(null, { status: 204 });
+}
+
 export async function onRequestDelete({ params, env }) {
   const id = params.id;
 

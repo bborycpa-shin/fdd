@@ -1,6 +1,7 @@
 const params = new URLSearchParams(location.search);
 const projectId = params.get("id");
 const folderId = params.get("folder");
+const showAll = params.get("all") === "1";
 
 const contentsEl = document.getElementById("contents");
 const newFolderBtn = document.getElementById("new-folder-btn");
@@ -51,6 +52,15 @@ function projectColor(id) {
   document.body.style.backgroundAttachment = "fixed";
   document.body.style.minHeight = "100vh";
 })();
+
+if (showAll) {
+  newFolderBtn.disabled = true;
+  newFolderBtn.classList.add("opacity-40", "pointer-events-none");
+  newFolderBtn.title = "전체 보기에서는 비활성. 폴더로 이동 후 사용하세요";
+  uploadBtn.disabled = true;
+  uploadBtn.classList.add("opacity-40", "pointer-events-none");
+  uploadBtn.title = "전체 보기에서는 비활성. 폴더로 이동 후 사용하세요";
+}
 
 const FILE_ICON_MAP = {
   xlsx: { color: "bg-emerald-600", label: "XLS" },
@@ -197,16 +207,22 @@ function renderTree(data) {
   const all = data.all_folders || [];
   const pid = encodeURIComponent(data.project.id);
   const currentId = folderId || null;
-  const isRoot = !currentId;
+  const isRoot = !currentId && !showAll;
 
   const projectChip = `
     <a href="/project.html?id=${pid}" class="inline-flex items-center px-2.5 py-0.5 rounded-full border transition ${isRoot ? "bg-blue-600 text-white border-blue-600 font-semibold" : "bg-white text-slate-700 border-slate-300 active:bg-slate-100"}">
       ${escapeHtml(data.project.name)}
     </a>
   `;
+  const allFilesChip = `
+    <a href="/project.html?id=${pid}&all=1" class="inline-flex items-center px-2.5 py-0.5 rounded-full border transition ${showAll ? "bg-blue-600 text-white border-blue-600 font-semibold" : "bg-white text-slate-700 border-slate-300 active:bg-slate-100"}">
+      📋 모든 파일
+    </a>
+  `;
+  const headerChips = `<div class="flex flex-wrap gap-1 items-center">${projectChip}${allFilesChip}</div>`;
 
   if (all.length === 0) {
-    folderTreeEl.innerHTML = projectChip;
+    folderTreeEl.innerHTML = headerChips;
     return;
   }
 
@@ -257,7 +273,7 @@ function renderTree(data) {
   }
 
   folderTreeEl.innerHTML = `
-    ${projectChip}
+    ${headerChips}
     <div class="mt-1.5 flex flex-wrap gap-1 items-start">
       ${roots.map((r) => renderNode(r, 1)).join("")}
     </div>
@@ -266,9 +282,10 @@ function renderTree(data) {
 
 async function load() {
   try {
-    const url =
-      `/api/projects/${encodeURIComponent(projectId)}/contents` +
-      (folderId ? `?folder=${encodeURIComponent(folderId)}` : "");
+    const url = showAll
+      ? `/api/projects/${encodeURIComponent(projectId)}/all-files`
+      : `/api/projects/${encodeURIComponent(projectId)}/contents` +
+        (folderId ? `?folder=${encodeURIComponent(folderId)}` : "");
     const res = await fetch(url);
     if (!res.ok) throw new Error();
     const data = await res.json();
@@ -356,6 +373,7 @@ function render(data) {
             <p class="text-[9px] text-amber-700/70 mt-0.5">${formatDate(f.created_at)}</p>
           </div>
         </a>
+        <button class="folder-rename text-amber-600/70 active:text-blue-600 px-1 py-0.5 text-sm shrink-0 self-center" data-id="${f.id}" data-name="${escapeHtml(f.name)}" aria-label="폴더 이름 바꾸기">✏</button>
         <button class="folder-delete text-amber-600/70 active:text-red-500 px-1 py-0.5 text-sm shrink-0 self-center" data-id="${f.id}" data-name="${escapeHtml(f.name)}" aria-label="폴더 삭제">🗑</button>
       </div>
     `);
@@ -364,6 +382,9 @@ function render(data) {
   for (const file of files) {
     const icon = getFileIcon(file.name);
     const isChecked = selectedFileIds.has(file.id);
+    const pathLine = showAll && file.folder_path
+      ? `<p class="text-[9px] text-blue-600/80 mt-0.5">📁 ${escapeHtml(file.folder_path)}</p>`
+      : (showAll ? `<p class="text-[9px] text-slate-400 mt-0.5">📁 (루트)</p>` : "");
     items.push(`
       <div class="file-row flex items-center gap-1.5 px-2 py-1 rounded-lg border cursor-pointer ${isChecked ? "border-blue-400 bg-blue-50" : "border-slate-200 bg-white"}" data-id="${file.id}">
         <label class="shrink-0 self-center p-0.5 -ml-0.5" onclick="event.stopPropagation()">
@@ -374,9 +395,11 @@ function render(data) {
           <div class="flex-1 min-w-0 leading-tight">
             <p class="text-[11px] font-medium break-all">${escapeHtml(file.name)}</p>
             <p class="text-[9px] text-slate-400 mt-0.5">${formatSize(file.size)} · ${formatDate(file.uploaded_at)}</p>
+            ${pathLine}
           </div>
         </div>
         <button class="file-download text-slate-400 active:text-blue-600 px-1 py-0.5 text-sm shrink-0 self-center" data-id="${file.id}" aria-label="다운로드">⬇</button>
+        <button class="file-rename text-slate-400 active:text-blue-600 px-1 py-0.5 text-sm shrink-0 self-center" data-id="${file.id}" data-name="${escapeHtml(file.name)}" aria-label="이름 바꾸기">✏</button>
         <button class="file-delete text-slate-400 active:text-red-500 px-1 py-0.5 text-sm shrink-0 self-center" data-id="${file.id}" data-name="${escapeHtml(file.name)}" aria-label="파일 삭제">🗑</button>
       </div>
     `);
@@ -427,6 +450,48 @@ function render(data) {
       e.stopPropagation();
       const id = btn.dataset.id;
       window.open(`/api/files/${encodeURIComponent(id)}/download`, "_blank");
+    });
+  });
+
+  contentsEl.querySelectorAll(".file-rename").forEach((btn) => {
+    btn.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.id;
+      const current = btn.dataset.name;
+      const newName = prompt("새 파일 이름을 입력해주세요", current);
+      if (!newName || !newName.trim() || newName.trim() === current) return;
+      try {
+        const res = await fetch(`/api/files/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: newName.trim() }),
+        });
+        if (!res.ok) throw new Error();
+        await load();
+      } catch (e) {
+        alert("이름 변경 실패");
+      }
+    });
+  });
+
+  contentsEl.querySelectorAll(".folder-rename").forEach((btn) => {
+    btn.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.id;
+      const current = btn.dataset.name;
+      const newName = prompt("새 폴더 이름을 입력해주세요", current);
+      if (!newName || !newName.trim() || newName.trim() === current) return;
+      try {
+        const res = await fetch(`/api/folders/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: newName.trim() }),
+        });
+        if (!res.ok) throw new Error();
+        await load();
+      } catch (e) {
+        alert("이름 변경 실패");
+      }
     });
   });
 
