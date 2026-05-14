@@ -248,10 +248,19 @@ function renderTree(data) {
       📋 모든 파일 보기
     </a>
   `;
-  const headerChips = `<div class="flex flex-wrap gap-1 items-center">${projectChip}${allFilesChip}</div>`;
+  const refreshBtn = `
+    <button id="refresh-btn" class="shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-full bg-white border border-slate-300 text-slate-600 active:bg-slate-100 shadow-sm text-sm" aria-label="새로고침" title="새로고침">🔄</button>
+  `;
+  const headerRow = `
+    <div class="flex items-start justify-between gap-2">
+      <div class="flex flex-wrap gap-1 items-center flex-1 min-w-0">${projectChip}${allFilesChip}</div>
+      ${refreshBtn}
+    </div>
+  `;
 
   if (all.length === 0) {
-    folderTreeEl.innerHTML = headerChips;
+    folderTreeEl.innerHTML = headerRow;
+    attachRefreshHandler();
     return;
   }
 
@@ -302,11 +311,31 @@ function renderTree(data) {
   }
 
   folderTreeEl.innerHTML = `
-    ${headerChips}
+    ${headerRow}
     <div class="mt-1.5 flex flex-wrap gap-1 items-start">
       ${roots.map((r) => renderNode(r, 1)).join("")}
     </div>
   `;
+  attachRefreshHandler();
+}
+
+function attachRefreshHandler() {
+  const btn = document.getElementById("refresh-btn");
+  if (!btn) return;
+  btn.addEventListener("click", async () => {
+    btn.disabled = true;
+    btn.style.transform = "rotate(360deg)";
+    btn.style.transition = "transform 0.6s";
+    try {
+      await load();
+    } finally {
+      btn.disabled = false;
+      setTimeout(() => {
+        btn.style.transition = "";
+        btn.style.transform = "";
+      }, 600);
+    }
+  });
 }
 
 async function load() {
