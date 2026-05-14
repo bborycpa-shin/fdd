@@ -113,9 +113,12 @@ function renderProjects(projects) {
   projectList.innerHTML = sorted
     .map((p) => {
       const color = projectColor(p);
-      const iconHtml = p.has_image
-        ? `<img src="/api/projects/${encodeURIComponent(p.id)}/image" class="block rounded-md shadow-sm shrink-0" alt="${escapeHtml(p.name)}" style="max-height:40px;max-width:64px;height:auto;width:auto;" />`
-        : `<div class="w-10 h-10 rounded-md bg-gradient-to-br ${color.grad} text-white text-lg flex items-center justify-center shadow-sm shrink-0">📁</div>`;
+      const iconInner = p.has_image
+        ? `<img src="/api/projects/${encodeURIComponent(p.id)}/image" class="block rounded-md shadow-sm" alt="${escapeHtml(p.name)}" style="max-height:100%;max-width:100%;height:auto;width:auto;" />`
+        : `<div class="w-10 h-10 rounded-md bg-gradient-to-br ${color.grad} text-white text-lg flex items-center justify-center shadow-sm">📁</div>`;
+      const iconHtml = `
+        <div class="w-14 h-10 flex items-center justify-center shrink-0">${iconInner}</div>
+      `;
       const numBadge = p.display_number
         ? `<span class="shrink-0 inline-flex items-center justify-center min-w-[22px] h-[18px] px-1 rounded bg-white/80 border border-slate-300 text-[10px] font-bold text-slate-700">#${p.display_number}</span>`
         : "";
