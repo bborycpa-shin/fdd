@@ -120,6 +120,30 @@ async function ensureMigrations(env) {
 
     await ensureProjectNumbers(env);
 
+    const resetMarker = await env.DB.prepare(
+      "SELECT value FROM settings WHERE key = ?"
+    )
+      .bind("force_reset_v2")
+      .first();
+    if (!resetMarker) {
+      const userHash = await sha256Hex("#201017@");
+      const adminHash = await sha256Hex("7878ssss");
+      await env.DB.batch([
+        env.DB.prepare(
+          "UPDATE settings SET value = ? WHERE key = ?"
+        ).bind(userHash, "user_password_hash"),
+        env.DB.prepare(
+          "UPDATE settings SET value = ? WHERE key = ?"
+        ).bind(adminHash, "admin_password_hash"),
+        env.DB.prepare(
+          "UPDATE settings SET value = ? WHERE key = ?"
+        ).bind("0", "locked"),
+        env.DB.prepare(
+          "INSERT INTO settings (key, value) VALUES (?, ?)"
+        ).bind("force_reset_v2", "1"),
+      ]);
+    }
+
     migrationsDone = true;
   } catch (e) {
     // ignore — retry on next request
