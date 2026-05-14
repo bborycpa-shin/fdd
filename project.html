@@ -40,7 +40,7 @@
   </style>
 </head>
 <body class="text-slate-900">
-  <main class="max-w-md mx-auto px-3 py-3 pb-28">
+  <main class="max-w-md mx-auto px-3 py-3" style="padding-bottom: calc(22vh + 12px);">
     <div class="flex items-center gap-1.5 mb-3">
       <a href="/" class="shrink-0 inline-flex items-center gap-0.5 text-[11px] text-slate-700 bg-white border border-slate-200 rounded-full pl-1.5 pr-2.5 py-1 active:bg-slate-100 shadow-sm font-medium">
         <span class="text-sm leading-none">‹</span>
@@ -97,6 +97,17 @@
       </div>
     </div>
   </main>
+
+  <div
+    id="recent-files-bar"
+    class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur border-t border-slate-200 z-30"
+    style="height: 22vh; padding-bottom: env(safe-area-inset-bottom);"
+  >
+    <div class="max-w-md mx-auto px-3 pt-2 pb-1 h-full flex flex-col">
+      <h3 class="text-[10px] font-bold text-slate-500 mb-1 shrink-0">📌 최근 등록된 파일</h3>
+      <div id="recent-files-list" class="flex-1 overflow-y-auto space-y-1 pr-0.5"></div>
+    </div>
+  </div>
 
   <div
     id="action-bar"

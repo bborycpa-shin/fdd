@@ -23,28 +23,40 @@ export async function onRequestGet({ params, request, env }) {
     .bind(projectId)
     .all();
 
+  const folderMapForPath = new Map();
+  (allFolders || []).forEach((f) => folderMapForPath.set(f.id, f));
+  function buildFolderPath(fid) {
+    const parts = [];
+    let cur = folderMapForPath.get(fid);
+    let safety = 50;
+    while (cur && safety-- > 0) {
+      parts.unshift(cur.name);
+      cur = cur.parent_folder_id
+        ? folderMapForPath.get(cur.parent_folder_id)
+        : null;
+    }
+    return parts.join(" / ");
+  }
+
+  const { results: recentRaw } = await env.DB.prepare(
+    "SELECT id, name, size, content_type, folder_id, uploaded_at FROM files WHERE project_id = ? ORDER BY uploaded_at DESC LIMIT 10"
+  )
+    .bind(projectId)
+    .all();
+  const recentFiles = (recentRaw || []).map((f) => ({
+    ...f,
+    folder_path: f.folder_id ? buildFolderPath(f.folder_id) : "",
+  }));
+
   if (showAll) {
     const { results: allFiles } = await env.DB.prepare(
       "SELECT id, name, size, content_type, folder_id, uploaded_at FROM files WHERE project_id = ?"
     )
       .bind(projectId)
       .all();
-
-    const folderMap = new Map();
-    (allFolders || []).forEach((f) => folderMap.set(f.id, f));
-    function getFolderPath(fid) {
-      const parts = [];
-      let cur = folderMap.get(fid);
-      let safety = 50;
-      while (cur && safety-- > 0) {
-        parts.unshift(cur.name);
-        cur = cur.parent_folder_id ? folderMap.get(cur.parent_folder_id) : null;
-      }
-      return parts.join(" / ");
-    }
     const filesWithPath = (allFiles || []).map((f) => ({
       ...f,
-      folder_path: f.folder_id ? getFolderPath(f.folder_id) : "",
+      folder_path: f.folder_id ? buildFolderPath(f.folder_id) : "",
     }));
 
     return Response.json({
@@ -54,6 +66,7 @@ export async function onRequestGet({ params, request, env }) {
       folders: [],
       files: filesWithPath,
       all_folders: allFolders || [],
+      recent_files: recentFiles,
     });
   }
 
@@ -125,5 +138,6 @@ export async function onRequestGet({ params, request, env }) {
     folders,
     files,
     all_folders: allFolders || [],
+    recent_files: recentFiles,
   });
 }

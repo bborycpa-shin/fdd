@@ -4,6 +4,7 @@ const folderId = params.get("folder");
 const showAll = params.get("all") === "1";
 
 const contentsEl = document.getElementById("contents");
+const recentFilesList = document.getElementById("recent-files-list");
 const newFolderBtn = document.getElementById("new-folder-btn");
 const uploadBtn = document.getElementById("upload-btn");
 const fileInput = document.getElementById("file-input");
@@ -249,7 +250,10 @@ function renderTree(data) {
     </a>
   `;
   const refreshBtn = `
-    <button id="refresh-btn" class="shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-full bg-white border border-slate-300 text-slate-600 active:bg-slate-100 shadow-sm text-sm" aria-label="새로고침" title="새로고침">🔄</button>
+    <button id="refresh-btn" class="shrink-0 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white border border-slate-300 text-slate-700 active:bg-slate-100 shadow-sm text-[11px] font-medium" aria-label="새로고침">
+      <span class="refresh-icon leading-none inline-block">↻</span>
+      <span>새로고침</span>
+    </button>
   `;
   const headerRow = `
     <div class="flex items-start justify-between gap-2">
@@ -324,15 +328,20 @@ function attachRefreshHandler() {
   if (!btn) return;
   btn.addEventListener("click", async () => {
     btn.disabled = true;
-    btn.style.transform = "rotate(360deg)";
-    btn.style.transition = "transform 0.6s";
+    const icon = btn.querySelector(".refresh-icon");
+    if (icon) {
+      icon.style.transform = "rotate(360deg)";
+      icon.style.transition = "transform 0.6s";
+    }
     try {
       await load();
     } finally {
       btn.disabled = false;
       setTimeout(() => {
-        btn.style.transition = "";
-        btn.style.transform = "";
+        if (icon) {
+          icon.style.transition = "";
+          icon.style.transform = "";
+        }
       }, 600);
     }
   });
@@ -403,12 +412,37 @@ function renderProjectImage(data) {
   }
 }
 
+function renderRecentFiles(files) {
+  if (!recentFilesList) return;
+  if (!files || files.length === 0) {
+    recentFilesList.innerHTML =
+      '<p class="text-[10px] text-slate-400 text-center py-3">아직 파일이 없어요</p>';
+    return;
+  }
+  recentFilesList.innerHTML = files
+    .map((f) => {
+      const icon = getFileIcon(f.name);
+      const path = f.folder_path || "(루트)";
+      return `
+        <a href="/api/files/${encodeURIComponent(f.id)}/download" target="_blank" rel="noopener" class="flex items-center gap-1.5 px-1.5 py-1 bg-slate-50 active:bg-slate-200 rounded-md transition">
+          <span class="w-5 h-5 rounded ${icon.color} text-white text-[6px] font-bold flex items-center justify-center shrink-0">${icon.label}</span>
+          <div class="flex-1 min-w-0 leading-tight">
+            <p class="text-[10px] font-medium truncate text-slate-800">${escapeHtml(f.name)}</p>
+            <p class="text-[8px] text-slate-400 truncate">📁 ${escapeHtml(path)} · ${formatDate(f.uploaded_at)}</p>
+          </div>
+        </a>
+      `;
+    })
+    .join("");
+}
+
 function render(data) {
   document.title = `${data.project.name} - 파일 공유`;
 
   applyBackground(data.project);
   renderProjectImage(data);
   renderTree(data);
+  renderRecentFiles(data.recent_files || []);
 
   const folders = sortItems(data.folders, "folder", "name_asc");
   const files = sortItems(data.files, "file", currentSort);
