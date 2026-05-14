@@ -2,7 +2,6 @@ const params = new URLSearchParams(location.search);
 const projectId = params.get("id");
 const folderId = params.get("folder");
 
-const projectNameEl = document.getElementById("project-name");
 const contentsEl = document.getElementById("contents");
 const newFolderBtn = document.getElementById("new-folder-btn");
 const uploadBtn = document.getElementById("upload-btn");
@@ -25,6 +24,31 @@ const moveFolderListEl = document.getElementById("move-folder-list");
 if (!projectId) {
   location.href = "/";
 }
+
+const BG_GRADIENTS = [
+  ["#eff6ff", "#e0e7ff"],
+  ["#fdf2f8", "#ffe4e6"],
+  ["#f0fdf4", "#d1fae5"],
+  ["#fff7ed", "#fee2e2"],
+  ["#faf5ff", "#ede9fe"],
+  ["#f0fdfa", "#cffafe"],
+  ["#fffbeb", "#ffedd5"],
+  ["#f1f5f9", "#e2e8f0"],
+];
+
+function bgGradientFor(id) {
+  const s = String(id);
+  let hash = 0;
+  for (let i = 0; i < s.length; i++) hash = (hash * 31 + s.charCodeAt(i)) >>> 0;
+  return BG_GRADIENTS[hash % BG_GRADIENTS.length];
+}
+
+(function applyProjectBackground() {
+  const [c1, c2] = bgGradientFor(projectId);
+  document.body.style.background = `linear-gradient(135deg, ${c1}, ${c2})`;
+  document.body.style.backgroundAttachment = "fixed";
+  document.body.style.minHeight = "100vh";
+})();
 
 const FILE_ICON_MAP = {
   xlsx: { color: "bg-emerald-600", label: "XLS" },
@@ -119,7 +143,7 @@ function applySortChipStyles() {
   sortBar.querySelectorAll(".sort-chip").forEach((chip) => {
     const isCurrent = chip.dataset.sort === currentSort;
     chip.className =
-      "sort-chip shrink-0 px-2 py-0.5 rounded-full border " +
+      "sort-chip shrink-0 px-1.5 py-0.5 rounded-full border " +
       (isCurrent
         ? "bg-blue-600 text-white border-blue-600 font-semibold"
         : "bg-white text-slate-700 border-slate-300 active:bg-slate-100");
@@ -260,7 +284,6 @@ async function load() {
 }
 
 function render(data) {
-  projectNameEl.textContent = data.project.name;
   document.title = `${data.project.name} - 파일 공유`;
 
   renderTree(data);
@@ -281,15 +304,15 @@ function render(data) {
 
   for (const f of folders) {
     items.push(`
-      <div class="flex items-center gap-2 px-3 py-1.5 bg-amber-50 rounded-xl border border-amber-200">
-        <a href="/project.html?id=${encodeURIComponent(data.project.id)}&folder=${encodeURIComponent(f.id)}" class="flex-1 flex items-center gap-2 min-w-0 active:opacity-60 transition py-0.5">
-          <span class="w-7 h-7 rounded-md bg-amber-200 text-amber-800 flex items-center justify-center text-sm shrink-0">📁</span>
+      <div class="flex items-center gap-1.5 px-2 py-1 bg-amber-50 rounded-lg border border-amber-200">
+        <a href="/project.html?id=${encodeURIComponent(data.project.id)}&folder=${encodeURIComponent(f.id)}" class="flex-1 flex items-center gap-1.5 min-w-0 active:opacity-60 transition">
+          <span class="w-6 h-6 rounded bg-amber-200 text-amber-800 flex items-center justify-center text-xs shrink-0">📁</span>
           <div class="flex-1 min-w-0 leading-tight">
-            <p class="text-xs font-medium break-all text-amber-950">${escapeHtml(f.name)}</p>
-            <p class="text-[10px] text-amber-700/70 mt-0.5">${formatDate(f.created_at)}</p>
+            <p class="text-[11px] font-medium break-all text-amber-950">${escapeHtml(f.name)}</p>
+            <p class="text-[9px] text-amber-700/70 mt-0.5">${formatDate(f.created_at)}</p>
           </div>
         </a>
-        <button class="folder-delete text-amber-600/70 active:text-red-500 px-1.5 py-1 text-base shrink-0 self-center" data-id="${f.id}" data-name="${escapeHtml(f.name)}" aria-label="폴더 삭제">🗑</button>
+        <button class="folder-delete text-amber-600/70 active:text-red-500 px-1 py-0.5 text-sm shrink-0 self-center" data-id="${f.id}" data-name="${escapeHtml(f.name)}" aria-label="폴더 삭제">🗑</button>
       </div>
     `);
   }
@@ -298,19 +321,19 @@ function render(data) {
     const icon = getFileIcon(file.name);
     const isChecked = selectedFileIds.has(file.id);
     items.push(`
-      <div class="file-row flex items-center gap-2 px-3 py-1.5 rounded-xl border cursor-pointer ${isChecked ? "border-blue-400 bg-blue-50" : "border-slate-200 bg-white"}" data-id="${file.id}">
-        <label class="shrink-0 self-center p-1 -ml-1" onclick="event.stopPropagation()">
-          <input type="checkbox" class="file-check w-4 h-4 align-middle accent-blue-600" data-id="${file.id}" ${isChecked ? "checked" : ""} />
+      <div class="file-row flex items-center gap-1.5 px-2 py-1 rounded-lg border cursor-pointer ${isChecked ? "border-blue-400 bg-blue-50" : "border-slate-200 bg-white"}" data-id="${file.id}">
+        <label class="shrink-0 self-center p-0.5 -ml-0.5" onclick="event.stopPropagation()">
+          <input type="checkbox" class="file-check w-3.5 h-3.5 align-middle accent-blue-600" data-id="${file.id}" ${isChecked ? "checked" : ""} />
         </label>
-        <div class="flex-1 flex items-start gap-2 min-w-0 py-0.5">
-          <span class="w-7 h-7 rounded-md ${icon.color} text-white flex items-center justify-center text-[8px] font-bold shrink-0 mt-0.5">${icon.label}</span>
+        <div class="flex-1 flex items-start gap-1.5 min-w-0">
+          <span class="w-6 h-6 rounded ${icon.color} text-white flex items-center justify-center text-[7px] font-bold shrink-0 mt-0.5">${icon.label}</span>
           <div class="flex-1 min-w-0 leading-tight">
-            <p class="text-xs font-medium break-all">${escapeHtml(file.name)}</p>
-            <p class="text-[10px] text-slate-400 mt-0.5">${formatSize(file.size)} · ${formatDate(file.uploaded_at)}</p>
+            <p class="text-[11px] font-medium break-all">${escapeHtml(file.name)}</p>
+            <p class="text-[9px] text-slate-400 mt-0.5">${formatSize(file.size)} · ${formatDate(file.uploaded_at)}</p>
           </div>
         </div>
-        <button class="file-download text-slate-400 active:text-blue-600 px-1.5 py-1 text-base shrink-0 self-center" data-id="${file.id}" aria-label="다운로드">⬇</button>
-        <button class="file-delete text-slate-400 active:text-red-500 px-1.5 py-1 text-base shrink-0 self-center" data-id="${file.id}" data-name="${escapeHtml(file.name)}" aria-label="파일 삭제">🗑</button>
+        <button class="file-download text-slate-400 active:text-blue-600 px-1 py-0.5 text-sm shrink-0 self-center" data-id="${file.id}" aria-label="다운로드">⬇</button>
+        <button class="file-delete text-slate-400 active:text-red-500 px-1 py-0.5 text-sm shrink-0 self-center" data-id="${file.id}" data-name="${escapeHtml(file.name)}" aria-label="파일 삭제">🗑</button>
       </div>
     `);
   }
@@ -415,7 +438,7 @@ function updateSelectAllChip(currentFiles) {
     fileIds.length > 0 && fileIds.every((id) => selectedFileIds.has(id));
   selectAllBtn.innerHTML = allSelected ? "☑ 전체" : "☐ 전체";
   selectAllBtn.className =
-    "shrink-0 px-2.5 py-1 rounded-full border " +
+    "shrink-0 px-1.5 py-0.5 rounded-full border " +
     (allSelected
       ? "bg-blue-600 text-white border-blue-600 font-semibold"
       : "bg-white text-slate-700 border-slate-300 active:bg-slate-100");
