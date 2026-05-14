@@ -31,26 +31,37 @@
     document.head.appendChild(s);
   }
 
+  const LOCK_SVG_CLOSED =
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;display:block;"><rect x="4" y="11" width="16" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>';
+  const LOCK_SVG_OPEN =
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;display:block;"><rect x="4" y="11" width="16" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 7.8-1"></path></svg>';
+
   function injectLockButton() {
-    const btn = document.createElement("button");
-    btn.id = "admin-lock-btn";
-    btn.title = "관리자";
-    btn.setAttribute("aria-label", "관리자");
-    btn.style.cssText =
-      "position:fixed;top:calc(env(safe-area-inset-top) + 8px);right:8px;z-index:60;width:32px;height:32px;border-radius:9999px;background:white;border:1px solid #cbd5e1;box-shadow:0 1px 3px rgba(0,0,0,0.1);font-size:14px;line-height:1;display:flex;align-items:center;justify-content:center;cursor:pointer;";
-    btn.textContent = "🔒";
+    const slot = document.getElementById("admin-lock-slot");
+    if (!slot) return;
+    slot.innerHTML = `
+      <button id="admin-lock-btn" aria-label="관리자" title="관리자"
+        class="shrink-0 inline-flex items-center justify-center px-2 py-1 rounded-lg border text-[11px] font-medium">
+      </button>
+    `;
+    const btn = document.getElementById("admin-lock-btn");
     btn.addEventListener("click", openAdminModal);
-    document.body.appendChild(btn);
     updateLockButton();
   }
 
   function updateLockButton() {
     const btn = document.getElementById("admin-lock-btn");
     if (!btn) return;
-    btn.textContent = isAdmin ? "🔓" : "🔒";
-    btn.style.background = isAdmin ? "#2563eb" : "white";
-    btn.style.color = isAdmin ? "white" : "inherit";
-    btn.style.borderColor = isAdmin ? "#2563eb" : "#cbd5e1";
+    btn.innerHTML = isAdmin ? LOCK_SVG_OPEN : LOCK_SVG_CLOSED;
+    if (isAdmin) {
+      btn.style.background = "#2563eb";
+      btn.style.color = "white";
+      btn.style.borderColor = "#2563eb";
+    } else {
+      btn.style.background = "white";
+      btn.style.color = "#475569";
+      btn.style.borderColor = "#cbd5e1";
+    }
   }
 
   function injectModal() {

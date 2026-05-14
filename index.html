@@ -18,18 +18,21 @@
   </style>
 </head>
 <body class="bg-slate-50 text-slate-900 min-h-screen">
-  <main class="max-w-md mx-auto px-3 py-5 pr-12">
+  <main class="max-w-md mx-auto px-3 py-5">
     <header class="flex items-center justify-between mb-3">
       <h1 class="text-lg font-bold flex items-baseline gap-1.5">
         <span>📁 파일공유</span>
         <span class="text-[10px] font-normal text-slate-400">by 신CPA</span>
       </h1>
-      <button
-        id="new-project-btn"
-        class="text-xs bg-blue-600 text-white font-medium rounded-lg px-3 py-1.5 active:bg-blue-700 transition shadow-sm"
-      >
-        + 새 프로젝트
-      </button>
+      <div class="flex items-center gap-1.5">
+        <div id="admin-lock-slot"></div>
+        <button
+          id="new-project-btn"
+          class="text-[11px] bg-blue-600 text-white font-medium rounded-lg px-2.5 py-1 active:bg-blue-700 transition shadow-sm"
+        >
+          + 새 프로젝트
+        </button>
+      </div>
     </header>
 
     <div id="project-list" class="space-y-1.5">
