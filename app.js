@@ -90,9 +90,12 @@ async function loadProjects() {
 }
 
 function renderProjects(projects) {
-  const sorted = [...projects].sort((a, b) =>
-    a.name.localeCompare(b.name, "ko")
-  );
+  const sorted = [...projects].sort((a, b) => {
+    const ad = a.display_number || 0;
+    const bd = b.display_number || 0;
+    if (ad !== bd) return ad - bd;
+    return a.name.localeCompare(b.name, "ko");
+  });
 
   if (sorted.length === 0) {
     projectList.innerHTML =
