@@ -33,22 +33,22 @@ function escapeHtml(str) {
   );
 }
 
-const GRADIENTS = [
-  "from-blue-500 to-indigo-600",
-  "from-pink-500 to-rose-600",
-  "from-green-500 to-emerald-600",
-  "from-orange-500 to-red-500",
-  "from-purple-500 to-violet-600",
-  "from-teal-500 to-cyan-600",
-  "from-amber-500 to-orange-600",
-  "from-slate-600 to-slate-800",
+const PROJECT_COLORS = [
+  { bgFrom: "#eff6ff", bgTo: "#e0e7ff", grad: "from-blue-500 to-indigo-600" },
+  { bgFrom: "#fdf2f8", bgTo: "#ffe4e6", grad: "from-pink-500 to-rose-600" },
+  { bgFrom: "#f0fdf4", bgTo: "#d1fae5", grad: "from-green-500 to-emerald-600" },
+  { bgFrom: "#fff7ed", bgTo: "#fee2e2", grad: "from-orange-500 to-red-500" },
+  { bgFrom: "#faf5ff", bgTo: "#ede9fe", grad: "from-purple-500 to-violet-600" },
+  { bgFrom: "#f0fdfa", bgTo: "#cffafe", grad: "from-teal-500 to-cyan-600" },
+  { bgFrom: "#fffbeb", bgTo: "#ffedd5", grad: "from-amber-500 to-orange-600" },
+  { bgFrom: "#f1f5f9", bgTo: "#e2e8f0", grad: "from-slate-600 to-slate-800" },
 ];
 
-function gradientFor(id) {
+function projectColor(id) {
   const s = String(id);
   let hash = 0;
   for (let i = 0; i < s.length; i++) hash = (hash * 31 + s.charCodeAt(i)) >>> 0;
-  return GRADIENTS[hash % GRADIENTS.length];
+  return PROJECT_COLORS[hash % PROJECT_COLORS.length];
 }
 
 function formatDate(unixSec) {
@@ -105,21 +105,22 @@ function renderProjects(projects) {
 
   projectList.innerHTML = sorted
     .map((p) => {
+      const color = projectColor(p.id);
       const iconHtml = p.has_image
-        ? `<img src="/api/projects/${encodeURIComponent(p.id)}/image" class="w-12 h-12 rounded-xl object-cover shadow-md bg-slate-100" alt="${escapeHtml(p.name)}" />`
-        : `<div class="w-12 h-12 rounded-xl bg-gradient-to-br ${gradientFor(p.id)} text-white text-2xl flex items-center justify-center shadow-md">📁</div>`;
+        ? `<img src="/api/projects/${encodeURIComponent(p.id)}/image" class="w-12 h-12 rounded-xl object-cover shadow-md bg-white" alt="${escapeHtml(p.name)}" />`
+        : `<div class="w-12 h-12 rounded-xl bg-gradient-to-br ${color.grad} text-white text-2xl flex items-center justify-center shadow-md">📁</div>`;
       return `
-    <div class="relative aspect-square bg-white rounded-2xl border border-slate-100 shadow-sm active:scale-[0.97] transition-transform">
+    <div class="relative aspect-square rounded-2xl border border-white/60 shadow-sm active:scale-[0.97] transition-transform" style="background: linear-gradient(135deg, ${color.bgFrom}, ${color.bgTo})">
       <button class="project-open block w-full h-full text-left p-3" data-id="${p.id}">
         <div class="flex flex-col h-full justify-between">
           ${iconHtml}
           <div class="mt-2 min-w-0">
-            <p class="text-sm font-bold break-all leading-tight line-clamp-3">${escapeHtml(p.name)}</p>
-            <p class="text-[10px] text-slate-400 mt-1">${formatDate(p.created_at)}</p>
+            <p class="text-sm font-bold break-all leading-tight line-clamp-3 text-slate-900">${escapeHtml(p.name)}</p>
+            <p class="text-[10px] text-slate-500 mt-1">${formatDate(p.created_at)}</p>
           </div>
         </div>
       </button>
-      <button class="project-delete absolute top-1.5 right-1.5 text-slate-300 active:text-red-500 text-base px-1.5 py-1" data-id="${p.id}" data-name="${escapeHtml(p.name)}" aria-label="프로젝트 삭제">🗑</button>
+      <button class="project-delete absolute top-1.5 right-1.5 text-slate-400 active:text-red-500 text-base px-1.5 py-1" data-id="${p.id}" data-name="${escapeHtml(p.name)}" aria-label="프로젝트 삭제">🗑</button>
     </div>
   `;
     })

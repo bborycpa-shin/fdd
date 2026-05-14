@@ -27,27 +27,27 @@ if (!projectId) {
   location.href = "/";
 }
 
-const BG_GRADIENTS = [
-  ["#eff6ff", "#e0e7ff"],
-  ["#fdf2f8", "#ffe4e6"],
-  ["#f0fdf4", "#d1fae5"],
-  ["#fff7ed", "#fee2e2"],
-  ["#faf5ff", "#ede9fe"],
-  ["#f0fdfa", "#cffafe"],
-  ["#fffbeb", "#ffedd5"],
-  ["#f1f5f9", "#e2e8f0"],
+const PROJECT_COLORS = [
+  { bgFrom: "#eff6ff", bgTo: "#e0e7ff", grad: "from-blue-500 to-indigo-600" },
+  { bgFrom: "#fdf2f8", bgTo: "#ffe4e6", grad: "from-pink-500 to-rose-600" },
+  { bgFrom: "#f0fdf4", bgTo: "#d1fae5", grad: "from-green-500 to-emerald-600" },
+  { bgFrom: "#fff7ed", bgTo: "#fee2e2", grad: "from-orange-500 to-red-500" },
+  { bgFrom: "#faf5ff", bgTo: "#ede9fe", grad: "from-purple-500 to-violet-600" },
+  { bgFrom: "#f0fdfa", bgTo: "#cffafe", grad: "from-teal-500 to-cyan-600" },
+  { bgFrom: "#fffbeb", bgTo: "#ffedd5", grad: "from-amber-500 to-orange-600" },
+  { bgFrom: "#f1f5f9", bgTo: "#e2e8f0", grad: "from-slate-600 to-slate-800" },
 ];
 
-function bgGradientFor(id) {
+function projectColor(id) {
   const s = String(id);
   let hash = 0;
   for (let i = 0; i < s.length; i++) hash = (hash * 31 + s.charCodeAt(i)) >>> 0;
-  return BG_GRADIENTS[hash % BG_GRADIENTS.length];
+  return PROJECT_COLORS[hash % PROJECT_COLORS.length];
 }
 
 (function applyProjectBackground() {
-  const [c1, c2] = bgGradientFor(projectId);
-  document.body.style.background = `linear-gradient(135deg, ${c1}, ${c2})`;
+  const c = projectColor(projectId);
+  document.body.style.background = `linear-gradient(135deg, ${c.bgFrom}, ${c.bgTo})`;
   document.body.style.backgroundAttachment = "fixed";
   document.body.style.minHeight = "100vh";
 })();
@@ -717,9 +717,7 @@ fileInput.addEventListener("change", async () => {
   await uploadFiles(files);
 });
 
-imageInput.addEventListener("change", async () => {
-  const file = imageInput.files?.[0];
-  imageInput.value = "";
+async function uploadLogoImage(file) {
   if (!file) return;
   if (!file.type.startsWith("image/")) {
     alert("이미지 파일만 업로드 가능해요");
@@ -741,6 +739,41 @@ imageInput.addEventListener("change", async () => {
   } catch (e) {
     alert("이미지 업로드 실패");
   }
+}
+
+imageInput.addEventListener("change", async () => {
+  const file = imageInput.files?.[0];
+  imageInput.value = "";
+  await uploadLogoImage(file);
+});
+
+projectImageRow.addEventListener("dragenter", (e) => {
+  if (!e.dataTransfer || !Array.from(e.dataTransfer.types || []).includes("Files"))
+    return;
+  e.preventDefault();
+  e.stopPropagation();
+  projectImageRow.classList.add("logo-drop-active");
+});
+projectImageRow.addEventListener("dragover", (e) => {
+  if (!e.dataTransfer || !Array.from(e.dataTransfer.types || []).includes("Files"))
+    return;
+  e.preventDefault();
+  e.stopPropagation();
+});
+projectImageRow.addEventListener("dragleave", (e) => {
+  if (!e.dataTransfer) return;
+  e.stopPropagation();
+  if (!projectImageRow.contains(e.relatedTarget)) {
+    projectImageRow.classList.remove("logo-drop-active");
+  }
+});
+projectImageRow.addEventListener("drop", async (e) => {
+  if (!e.dataTransfer) return;
+  e.preventDefault();
+  e.stopPropagation();
+  projectImageRow.classList.remove("logo-drop-active");
+  const file = e.dataTransfer.files?.[0];
+  await uploadLogoImage(file);
 });
 
 let dragCounter = 0;
