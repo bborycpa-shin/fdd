@@ -476,34 +476,37 @@
     const wrap = document.createElement("div");
     wrap.id = "login-overlay";
     wrap.style.cssText =
-      "position:fixed;inset:0;background:#f8fafc;z-index:80;display:none;align-items:flex-start;justify-content:center;padding:20px 16px;overflow-y:auto;";
+      "position:fixed;inset:0;background:#f8fafc;z-index:80;display:none;align-items:flex-start;justify-content:center;padding:12px;overflow-y:auto;";
     wrap.innerHTML = `
-      <div style="width:100%;max-width:360px;display:flex;flex-direction:column;align-items:center;">
-        <h1 style="font-size:18px;font-weight:700;margin:8px 0 2px 0;text-align:center;display:flex;align-items:baseline;gap:6px;">
+      <div style="width:100%;max-width:340px;display:flex;flex-direction:column;align-items:center;">
+        <h1 style="font-size:16px;font-weight:700;margin:4px 0 6px 0;text-align:center;display:flex;align-items:baseline;gap:5px;">
           <span>📁 파일공유 시스템</span>
-          <span style="font-size:10px;font-weight:400;color:#94a3b8;">by 신CPA</span>
+          <span style="font-size:9px;font-weight:400;color:#94a3b8;">by 신CPA</span>
         </h1>
-        <p style="font-size:11px;color:#dc2626;margin:8px 0 14px 0;text-align:center;line-height:1.4;">
-          업로드한 파일 삭제는 본인만 가능합니다<br>(5분 이내 + 동일 기기).
-        </p>
 
-        <label style="font-size:11px;color:#475569;width:100%;margin-bottom:4px;font-weight:500;">비밀번호</label>
-        <div id="login-pw-display" class="input-field" style="width:100%;background:white;border:1px solid #cbd5e1;border-radius:10px;padding:10px;text-align:center;font-size:20px;letter-spacing:6px;min-height:44px;margin-bottom:8px;color:#0f172a;font-weight:600;cursor:pointer;"></div>
+        <ul style="list-style:none;padding:0;margin:0 0 10px 0;width:100%;font-size:10px;color:#dc2626;line-height:1.35;">
+          <li style="margin-bottom:2px;">• 업로드파일 삭제는 5분 이내에 본인만 가능(동일 기기)</li>
+          <li style="margin-bottom:2px;">• 프로젝트별 접근 권한은 식별번호로 구분(보안 주의)</li>
+          <li>• 파일당 업로드 용량 최대 30MB</li>
+        </ul>
 
-        <label style="font-size:11px;color:#475569;width:100%;margin-bottom:4px;font-weight:500;">식별코드 (6자리)</label>
-        <div id="login-code-display" class="input-field" style="width:100%;background:white;border:1px solid #cbd5e1;border-radius:10px;padding:10px;text-align:center;font-size:20px;letter-spacing:6px;min-height:44px;margin-bottom:8px;color:#0f172a;font-weight:600;cursor:pointer;"></div>
+        <label style="font-size:10px;color:#475569;width:100%;margin-bottom:2px;font-weight:500;">비밀번호</label>
+        <div id="login-pw-display" class="input-field" style="width:100%;background:white;border:1px solid #cbd5e1;border-radius:8px;padding:7px;text-align:center;font-size:17px;letter-spacing:5px;min-height:34px;margin-bottom:6px;color:#0f172a;font-weight:600;cursor:pointer;box-sizing:border-box;"></div>
 
-        <p id="login-error" style="font-size:11px;color:#dc2626;margin:0 0 10px 0;min-height:14px;text-align:center;"></p>
+        <label style="font-size:10px;color:#475569;width:100%;margin-bottom:2px;font-weight:500;">식별코드 (6자리)</label>
+        <div id="login-code-display" class="input-field" style="width:100%;background:white;border:1px solid #cbd5e1;border-radius:8px;padding:7px;text-align:center;font-size:17px;letter-spacing:5px;min-height:34px;margin-bottom:4px;color:#0f172a;font-weight:600;cursor:pointer;box-sizing:border-box;"></div>
 
-        <div id="login-keypad" style="width:100%;display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:10px;"></div>
+        <p id="login-error" style="font-size:10px;color:#dc2626;margin:0 0 6px 0;min-height:14px;text-align:center;"></p>
 
-        <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#475569;margin-bottom:8px;">
-          <input id="login-remember" type="checkbox" style="width:14px;height:14px;accent-color:#2563eb;" />
-          이 기기에서 비밀번호+식별코드 기억
+        <div id="login-keypad" style="width:100%;display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:8px;"></div>
+
+        <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:#475569;margin-bottom:7px;">
+          <input id="login-remember" type="checkbox" style="width:13px;height:13px;accent-color:#2563eb;" />
+          이 기기에서 비번+식별코드 기억
         </label>
 
-        <button id="login-submit" style="width:100%;font-size:14px;padding:10px;background:#2563eb;color:white;font-weight:500;border:none;border-radius:10px;cursor:pointer;margin-bottom:6px;">로그인</button>
-        <button id="login-admin-mode" style="width:100%;font-size:12px;padding:8px;background:white;color:#0f172a;font-weight:500;border:1px solid #cbd5e1;border-radius:10px;cursor:pointer;">관리자 모드</button>
+        <button id="login-submit" style="width:100%;font-size:14px;padding:8px;background:#2563eb;color:white;font-weight:500;border:none;border-radius:8px;cursor:pointer;margin-bottom:5px;">로그인</button>
+        <button id="login-admin-mode" style="width:100%;font-size:11px;padding:6px;background:white;color:#0f172a;font-weight:500;border:1px solid #cbd5e1;border-radius:8px;cursor:pointer;">관리자 모드</button>
       </div>
     `;
     document.body.appendChild(wrap);
@@ -531,7 +534,7 @@
     keys.forEach(k => {
       const btn = document.createElement("button");
       btn.className = "keypad-key";
-      btn.style.cssText = "padding:12px 0;background:white;border:1px solid #cbd5e1;border-radius:10px;font-size:18px;font-weight:600;color:#0f172a;cursor:pointer;";
+      btn.style.cssText = "padding:9px 0;background:white;border:1px solid #cbd5e1;border-radius:8px;font-size:16px;font-weight:600;color:#0f172a;cursor:pointer;";
       btn.textContent = k;
       btn.addEventListener("click", () => {
         errEl.textContent = "";
@@ -653,8 +656,8 @@
     slot.innerHTML = `
       <button id="logout-btn" aria-label="로그아웃"
         class="shrink-0 inline-flex items-center justify-center px-2 py-1 rounded-lg border border-slate-300 bg-white text-slate-600 active:bg-slate-100 text-[11px] font-medium"
-        title="로그인 화면으로">
-        <span style="margin-right:2px;">↩</span>나가기
+        title="로그아웃 (로그인 화면으로)">
+        <span style="margin-right:2px;">↩</span>로그아웃
       </button>
     `;
     document.getElementById("logout-btn").addEventListener("click", () => {

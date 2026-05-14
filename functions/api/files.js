@@ -10,8 +10,8 @@ export async function onRequestPost({ request, env }) {
     return new Response("project_id and file required", { status: 400 });
   }
 
-  if (file.size > 50 * 1024 * 1024) {
-    return new Response("File too large (max 50MB)", { status: 413 });
+  if (file.size > 30 * 1024 * 1024) {
+    return new Response("File too large (max 30MB)", { status: 413 });
   }
 
   const project = await env.DB.prepare("SELECT id FROM projects WHERE id = ?")
