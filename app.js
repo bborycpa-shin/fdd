@@ -46,7 +46,8 @@ function renderProjects(projects) {
 
   projectList.querySelectorAll(".project-open").forEach((btn) => {
     btn.addEventListener("click", () => {
-      alert("이 프로젝트 안 화면은 다음 단계에서 만들어요!");
+      const id = btn.dataset.id;
+      location.href = `/project.html?id=${encodeURIComponent(id)}`;
     });
   });
 
