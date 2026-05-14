@@ -282,10 +282,12 @@ function renderTree(data) {
 
 async function load() {
   try {
-    const url = showAll
-      ? `/api/projects/${encodeURIComponent(projectId)}/all-files`
-      : `/api/projects/${encodeURIComponent(projectId)}/contents` +
-        (folderId ? `?folder=${encodeURIComponent(folderId)}` : "");
+    const qs = showAll
+      ? "?all=1"
+      : folderId
+      ? `?folder=${encodeURIComponent(folderId)}`
+      : "";
+    const url = `/api/projects/${encodeURIComponent(projectId)}/contents${qs}`;
     const res = await fetch(url);
     if (!res.ok) throw new Error();
     const data = await res.json();
