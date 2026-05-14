@@ -746,9 +746,32 @@
     document.getElementById("login-overlay").style.display = "none";
   }
 
-  function injectAuthStatusLine() {
+  function injectNavBar() {
     const slot = document.getElementById("auth-status-slot");
     if (!slot) return;
+    if (slot.dataset.navInjected === "1") return;
+    slot.dataset.navInjected = "1";
+    slot.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;line-height:1.3;padding:0 2px;gap:6px;">
+        <div style="display:flex;gap:4px;">
+          <button id="nav-back" aria-label="뒤로가기" title="뒤로가기" style="background:#7c3aed;color:white;border:none;border-radius:8px;padding:3px 8px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,0.08);line-height:1;">‹</button>
+          <button id="nav-forward" aria-label="앞으로가기" title="앞으로가기" style="background:#7c3aed;color:white;border:none;border-radius:8px;padding:3px 8px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,0.08);line-height:1;">›</button>
+        </div>
+        <span id="auth-status-pill" style="font-size:10px;color:#64748b;background:rgba(255,255,255,0.7);border:1px solid #e2e8f0;border-radius:9999px;padding:2px 8px;display:none;"></span>
+      </div>
+    `;
+    document
+      .getElementById("nav-back")
+      .addEventListener("click", () => history.back());
+    document
+      .getElementById("nav-forward")
+      .addEventListener("click", () => history.forward());
+  }
+
+  function injectAuthStatusLine() {
+    injectNavBar();
+    const pill = document.getElementById("auth-status-pill");
+    if (!pill) return;
     let html = "";
     if (isAdmin) {
       html = `🔓 관리자 (모든 권한)`;
@@ -767,15 +790,13 @@
       }
       html = `🔑 권한 식별 : ${labelTxt}${scope}`;
     }
-    if (!html) {
-      slot.innerHTML = "";
-      return;
+    if (html) {
+      pill.innerHTML = html;
+      pill.style.display = "inline-block";
+    } else {
+      pill.innerHTML = "";
+      pill.style.display = "none";
     }
-    slot.innerHTML = `
-      <div style="display:flex;justify-content:flex-end;font-size:10px;color:#64748b;margin-bottom:6px;line-height:1.3;padding:0 2px;">
-        <span style="background:rgba(255,255,255,0.7);border:1px solid #e2e8f0;border-radius:9999px;padding:2px 8px;">${html}</span>
-      </div>
-    `;
   }
 
   async function refreshStatus() {
@@ -840,6 +861,7 @@
   }
 
   injectStyles();
+  injectNavBar();
   injectLockButton();
   injectLogoutSlot();
   injectAdminModal();
