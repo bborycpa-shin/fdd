@@ -871,6 +871,19 @@ async function moveSelectedFiles(targetFolderId) {
 async function uploadFiles(files) {
   if (!files || files.length === 0) return;
 
+  const MAX_SIZE = 30 * 1024 * 1024;
+  const oversized = files.filter((f) => f.size > MAX_SIZE);
+  if (oversized.length > 0) {
+    const list = oversized
+      .map((f) => `• ${f.name} (${(f.size / 1024 / 1024).toFixed(1)} MB)`)
+      .join("\n");
+    alert(
+      `다음 ${oversized.length}개 파일은 30MB를 초과해서 업로드할 수 없어요:\n\n${list}`
+    );
+    files = files.filter((f) => f.size <= MAX_SIZE);
+    if (files.length === 0) return;
+  }
+
   uploadStatus.classList.remove("hidden");
   let success = 0;
   let fail = 0;
