@@ -30,8 +30,8 @@
       z-index: 1000;
       pointer-events: none;
     }
-    #breadcrumb::-webkit-scrollbar { display: none; }
-    #breadcrumb { scrollbar-width: none; }
+    #folder-tree::-webkit-scrollbar { display: none; }
+    #folder-tree { scrollbar-width: none; }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-900 min-h-screen">
@@ -42,16 +42,9 @@
 
     <h1 id="project-name" class="text-base font-bold mb-1 break-all leading-tight">&nbsp;</h1>
 
-    <nav id="breadcrumb" class="text-xs text-slate-500 mb-2 h-5 flex items-center gap-1 overflow-x-auto whitespace-nowrap">
-      <span>🏠</span>
-    </nav>
-
-    <details id="tree-container" class="bg-white rounded-xl border border-slate-200 mb-2 hidden" open>
-      <summary class="px-3 py-1.5 text-xs font-medium cursor-pointer flex items-center gap-1 text-slate-600 select-none">
-        폴더 구조
-      </summary>
-      <div id="folder-tree" class="px-2 pb-2 pt-1 max-h-56 overflow-y-auto text-xs border-t border-slate-100"></div>
-    </details>
+    <div id="tree-container" class="mb-3">
+      <div id="folder-tree" class="flex gap-1.5 overflow-x-auto whitespace-nowrap pb-1 text-xs"></div>
+    </div>
 
     <div class="grid grid-cols-2 gap-2 mb-2">
       <button

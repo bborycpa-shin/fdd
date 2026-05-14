@@ -3,7 +3,6 @@ const projectId = params.get("id");
 const folderId = params.get("folder");
 
 const projectNameEl = document.getElementById("project-name");
-const breadcrumbEl = document.getElementById("breadcrumb");
 const contentsEl = document.getElementById("contents");
 const newFolderBtn = document.getElementById("new-folder-btn");
 const uploadBtn = document.getElementById("upload-btn");
@@ -161,78 +160,62 @@ async function load() {
 
 function renderTree(data) {
   const all = data.all_folders || [];
-  if (all.length === 0) {
-    treeContainer.classList.add("hidden");
-    folderTreeEl.innerHTML = "";
-    return;
-  }
-  treeContainer.classList.remove("hidden");
-
-  const map = new Map();
-  all.forEach((f) => map.set(f.id, { ...f, children: [] }));
-  const roots = [];
-  all.forEach((f) => {
-    const node = map.get(f.id);
-    if (f.parent_folder_id && map.has(f.parent_folder_id)) {
-      map.get(f.parent_folder_id).children.push(node);
-    } else {
-      roots.push(node);
-    }
-  });
-  const sortByName = (a, b) => a.name.localeCompare(b.name, "ko");
-  function sortRec(nodes) {
-    nodes.sort(sortByName);
-    nodes.forEach((n) => sortRec(n.children));
-  }
-  sortRec(roots);
-
   const pid = encodeURIComponent(data.project.id);
   const currentId = folderId || null;
+  const isRoot = !currentId;
   const lines = [];
 
-  const isRoot = !currentId;
   lines.push(`
-    <a href="/project.html?id=${pid}" class="block py-1 px-1.5 rounded ${isRoot ? "bg-blue-50 text-blue-700 font-semibold" : "text-slate-700 active:bg-slate-100"}">
-      🏠 (루트)
+    <a href="/project.html?id=${pid}" class="inline-flex items-center px-2.5 py-1 rounded-full border shrink-0 transition ${isRoot ? "bg-blue-600 text-white border-blue-600 font-semibold" : "bg-white text-slate-700 border-slate-300 active:bg-slate-100"}">
+      ${escapeHtml(data.project.name)}
     </a>
   `);
 
-  function renderNodes(nodes, depth) {
-    for (const n of nodes) {
-      const isCurrent = n.id === currentId;
-      const pad = depth * 14 + 6;
-      lines.push(`
-        <a href="/project.html?id=${pid}&folder=${encodeURIComponent(n.id)}" class="block py-1 rounded ${isCurrent ? "bg-blue-50 text-blue-700 font-semibold" : "text-slate-700 active:bg-slate-100"}" style="padding-left:${pad}px; padding-right:6px;">
-          📁 ${escapeHtml(n.name)}
-        </a>
-      `);
-      if (n.children.length > 0) renderNodes(n.children, depth + 1);
+  if (all.length > 0) {
+    const map = new Map();
+    all.forEach((f) => map.set(f.id, { ...f, children: [] }));
+    const roots = [];
+    all.forEach((f) => {
+      const node = map.get(f.id);
+      if (f.parent_folder_id && map.has(f.parent_folder_id)) {
+        map.get(f.parent_folder_id).children.push(node);
+      } else {
+        roots.push(node);
+      }
+    });
+    const sortByName = (a, b) => a.name.localeCompare(b.name, "ko");
+    function sortRec(nodes) {
+      nodes.sort(sortByName);
+      nodes.forEach((n) => sortRec(n.children));
     }
+    sortRec(roots);
+
+    function walk(nodes, pathPrefix) {
+      for (const n of nodes) {
+        const fullPath = pathPrefix ? `${pathPrefix} / ${n.name}` : n.name;
+        const isCurrent = n.id === currentId;
+        lines.push(`
+          <a href="/project.html?id=${pid}&folder=${encodeURIComponent(n.id)}" class="inline-flex items-center px-2.5 py-1 rounded-full border shrink-0 transition ${isCurrent ? "bg-blue-600 text-white border-blue-600 font-semibold" : "bg-amber-50 text-amber-900 border-amber-200 active:bg-amber-100"}">
+            📁 ${escapeHtml(fullPath)}
+          </a>
+        `);
+        if (n.children.length > 0) walk(n.children, fullPath);
+      }
+    }
+    walk(roots, "");
   }
-  renderNodes(roots, 1);
 
   folderTreeEl.innerHTML = lines.join("");
 
-  const currentEl = folderTreeEl.querySelector(".bg-blue-50");
+  const currentEl = folderTreeEl.querySelector(".bg-blue-600");
   if (currentEl && currentEl.scrollIntoView) {
-    currentEl.scrollIntoView({ block: "nearest" });
+    currentEl.scrollIntoView({ block: "nearest", inline: "nearest" });
   }
 }
 
 function render(data) {
   projectNameEl.textContent = data.project.name;
   document.title = `${data.project.name} - 파일 공유`;
-
-  const crumbs = [
-    `<a href="/project.html?id=${encodeURIComponent(data.project.id)}" class="active:text-slate-900 shrink-0">🏠</a>`,
-  ];
-  for (const c of data.breadcrumb) {
-    crumbs.push('<span class="text-slate-300 shrink-0">/</span>');
-    crumbs.push(
-      `<a href="/project.html?id=${encodeURIComponent(data.project.id)}&folder=${encodeURIComponent(c.id)}" class="active:text-slate-900 shrink-0">${escapeHtml(c.name)}</a>`
-    );
-  }
-  breadcrumbEl.innerHTML = crumbs.join(" ");
 
   renderTree(data);
 
@@ -251,15 +234,15 @@ function render(data) {
 
   for (const f of folders) {
     items.push(`
-      <div class="flex items-center gap-2 px-3 py-1.5 bg-white rounded-xl border border-slate-200">
+      <div class="flex items-center gap-2 px-3 py-1.5 bg-amber-50 rounded-xl border border-amber-200">
         <a href="/project.html?id=${encodeURIComponent(data.project.id)}&folder=${encodeURIComponent(f.id)}" class="flex-1 flex items-center gap-2 min-w-0 active:opacity-60 transition py-0.5">
-          <span class="w-7 h-7 rounded-md bg-amber-100 text-amber-700 flex items-center justify-center text-sm shrink-0">📁</span>
+          <span class="w-7 h-7 rounded-md bg-amber-200 text-amber-800 flex items-center justify-center text-sm shrink-0">📁</span>
           <div class="flex-1 min-w-0 leading-tight">
-            <p class="text-xs font-medium break-all">${escapeHtml(f.name)}</p>
-            <p class="text-[10px] text-slate-400 mt-0.5">${formatDate(f.created_at)}</p>
+            <p class="text-xs font-medium break-all text-amber-950">${escapeHtml(f.name)}</p>
+            <p class="text-[10px] text-amber-700/70 mt-0.5">${formatDate(f.created_at)}</p>
           </div>
         </a>
-        <button class="folder-delete text-slate-400 active:text-red-500 px-1.5 py-1 text-base shrink-0 self-center" data-id="${f.id}" data-name="${escapeHtml(f.name)}" aria-label="폴더 삭제">🗑</button>
+        <button class="folder-delete text-amber-600/70 active:text-red-500 px-1.5 py-1 text-base shrink-0 self-center" data-id="${f.id}" data-name="${escapeHtml(f.name)}" aria-label="폴더 삭제">🗑</button>
       </div>
     `);
   }
