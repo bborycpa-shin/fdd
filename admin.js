@@ -348,8 +348,8 @@
       </div>
       <label style="font-size:11px;color:#64748b;display:block;margin-bottom:4px;">코드 (6자리, <code>0-9 * # @ ! ~</code>만 사용)</label>
       <div style="display:flex;gap:6px;margin-bottom:8px;align-items:stretch;">
-        <input id="ac-code" type="text" maxlength="6" value="${existing ? existing.code : ''}" style="flex:1;font-size:18px;font-weight:600;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;font-family:monospace;letter-spacing:4px;text-align:center;" />
-        <button type="button" id="ac-auto" style="shrink:0;font-size:11px;padding:0 10px;background:#eff6ff;color:#1d4ed8;font-weight:600;border:1px solid #bfdbfe;border-radius:8px;cursor:pointer;white-space:nowrap;">🎲 자동</button>
+        <input id="ac-code" type="text" maxlength="6" value="${existing ? existing.code : ''}" style="flex:1;min-width:0;font-size:16px;font-weight:600;padding:8px 6px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;font-family:monospace;letter-spacing:3px;text-align:center;" />
+        <button type="button" id="ac-auto" style="flex-shrink:0;font-size:11px;padding:0 10px;background:#eff6ff;color:#1d4ed8;font-weight:600;border:1px solid #bfdbfe;border-radius:8px;cursor:pointer;white-space:nowrap;line-height:1;">🎲 자동</button>
       </div>
       <label style="font-size:11px;color:#64748b;display:block;margin-bottom:4px;">별명 (선택, 메모용)</label>
       <input id="ac-label" type="text" maxlength="100" value="${existing ? escapeText(existing.label) : ''}" placeholder="예: 영업팀, 김부장" style="width:100%;font-size:13px;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:10px;box-sizing:border-box;" />
