@@ -8,14 +8,24 @@
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-50 text-slate-900 min-h-screen">
-  <main class="max-w-md mx-auto px-4 py-10">
-    <h1 class="text-2xl font-bold mb-2">📁 파일 공유</h1>
-    <p class="text-slate-600 mb-8">곧 사용 가능해질 예정이에요.</p>
+  <main class="max-w-md mx-auto px-4 py-8">
+    <header class="mb-6">
+      <h1 class="text-2xl font-bold">📁 파일 공유</h1>
+      <p class="text-slate-500 text-sm mt-1">프로젝트별로 파일을 관리하세요</p>
+    </header>
 
-    <div class="bg-white rounded-2xl shadow p-5 border border-slate-200">
-      <p class="text-sm text-slate-500">배포 확인용 페이지</p>
-      <p class="mt-1 text-base">이 화면이 보이면 Cloudflare Pages 배포가 정상이에요. ✅</p>
+    <button
+      id="new-project-btn"
+      class="w-full bg-blue-600 text-white font-medium rounded-2xl py-3 mb-6 active:bg-blue-700 transition"
+    >
+      + 새 프로젝트
+    </button>
+
+    <div id="project-list" class="space-y-2">
+      <p class="text-slate-400 text-center py-8">불러오는 중...</p>
     </div>
   </main>
+
+  <script src="/app.js"></script>
 </body>
 </html>
