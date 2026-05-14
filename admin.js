@@ -51,6 +51,16 @@
     return origFetch(input, init);
   };
 
+  function formatBlockedMessage(data) {
+    const base = (data && data.message) || "로그인 시도가 차단되었습니다.";
+    const sec = (data && data.remaining_sec) || 0;
+    let unit;
+    if (sec < 60) unit = `${sec}초`;
+    else if (sec < 3600) unit = `${Math.ceil(sec / 60)}분`;
+    else unit = `${Math.ceil(sec / 3600)}시간`;
+    return `${base} (남은 시간: ${unit})`;
+  }
+
   function setBodyClasses() {
     document.body.classList.toggle("admin-mode", isAdmin);
     document.body.classList.toggle("locked-blocked", locked && !isAdmin);
@@ -167,6 +177,12 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ password: pw }),
         });
+        if (res.status === 429) {
+          const data = await res.json().catch(() => ({}));
+          errEl.textContent = formatBlockedMessage(data);
+          errEl.style.display = "block";
+          return;
+        }
         if (!res.ok) throw new Error();
         storedAdminPw = pw;
         localStorage.setItem(ADMIN_KEY, pw);
@@ -653,6 +669,15 @@
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ password: pwBuffer, access_code: codeBuffer }),
         });
+        if (res.status === 429) {
+          const data = await res.json().catch(() => ({}));
+          errEl.textContent = formatBlockedMessage(data);
+          pwBuffer = "";
+          codeBuffer = "";
+          activeField = "pw";
+          updateDisplays();
+          return;
+        }
         if (!res.ok) throw new Error();
         const remember = document.getElementById("login-remember").checked;
         if (remember) {

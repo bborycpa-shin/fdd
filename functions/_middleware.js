@@ -71,6 +71,14 @@ async function ensureMigrations(env) {
         PRIMARY KEY (code, project_id)
       )`
     ).run();
+    await env.DB.prepare(
+      `CREATE TABLE IF NOT EXISTS login_attempts (
+        ip TEXT PRIMARY KEY,
+        fail_count INTEGER NOT NULL DEFAULT 0,
+        last_fail_at INTEGER NOT NULL DEFAULT 0,
+        blocked_until INTEGER
+      )`
+    ).run();
 
     const adminRow = await env.DB.prepare(
       "SELECT value FROM settings WHERE key = ?"
