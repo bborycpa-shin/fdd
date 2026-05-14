@@ -2,10 +2,19 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="theme-color" content="#0f172a" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <title>프로젝트 - 파일 공유</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    input, button { font-size: 16px; }
+  </style>
 </head>
 <body class="bg-slate-50 text-slate-900 min-h-screen">
   <main class="max-w-md mx-auto px-4 py-6">
@@ -13,18 +22,30 @@
       ← 프로젝트 목록
     </a>
 
-    <h1 id="project-name" class="text-2xl font-bold mb-2">불러오는 중...</h1>
+    <h1 id="project-name" class="text-2xl font-bold mb-2 break-words">불러오는 중...</h1>
 
     <nav id="breadcrumb" class="text-sm text-slate-500 mb-5 flex flex-wrap items-center gap-1"></nav>
 
-    <button
-      id="new-folder-btn"
-      class="w-full bg-blue-600 text-white font-medium rounded-2xl py-3 mb-5 active:bg-blue-700 transition"
-    >
-      + 새 폴더
-    </button>
+    <div class="grid grid-cols-2 gap-2 mb-3">
+      <button
+        id="new-folder-btn"
+        class="bg-white border border-slate-300 text-slate-900 font-medium rounded-2xl py-3 active:bg-slate-100 transition"
+      >
+        + 새 폴더
+      </button>
+      <button
+        id="upload-btn"
+        class="bg-blue-600 text-white font-medium rounded-2xl py-3 active:bg-blue-700 transition"
+      >
+        ⬆ 파일 올리기
+      </button>
+    </div>
 
-    <div id="contents" class="space-y-2">
+    <input id="file-input" type="file" multiple class="hidden" />
+
+    <p id="upload-status" class="text-sm text-blue-600 mb-3 hidden text-center"></p>
+
+    <div id="contents" class="space-y-2 mt-3">
       <p class="text-slate-400 text-center py-8">불러오는 중...</p>
     </div>
   </main>
