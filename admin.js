@@ -754,8 +754,8 @@
     slot.innerHTML = `
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;line-height:1.3;padding:0 2px;gap:6px;">
         <div style="display:flex;gap:4px;">
-          <button id="nav-back" aria-label="뒤로가기" title="뒤로가기" style="background:#334155;color:white;border:none;border-radius:8px;padding:4px 24px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,0.08);line-height:1;">‹</button>
-          <button id="nav-forward" aria-label="앞으로가기" title="앞으로가기" style="background:#334155;color:white;border:none;border-radius:8px;padding:4px 24px;font-size:13px;font-weight:600;cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,0.08);line-height:1;">›</button>
+          <button id="nav-back" aria-label="뒤로가기" title="뒤로가기" style="background:#6b7280;color:white;border:none;border-radius:8px;padding:0 24px;height:24px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,0.08);display:inline-flex;align-items:center;justify-content:center;line-height:1;">←</button>
+          <button id="nav-forward" aria-label="앞으로가기" title="앞으로가기" style="background:#6b7280;color:white;border:none;border-radius:8px;padding:0 24px;height:24px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 1px 2px rgba(0,0,0,0.08);display:inline-flex;align-items:center;justify-content:center;line-height:1;">→</button>
         </div>
         <span id="auth-status-pill" style="font-size:10px;color:#64748b;background:rgba(255,255,255,0.7);border:1px solid #e2e8f0;border-radius:9999px;padding:2px 8px;display:none;"></span>
       </div>
