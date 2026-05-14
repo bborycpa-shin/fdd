@@ -33,6 +33,24 @@ function escapeHtml(str) {
   );
 }
 
+const GRADIENTS = [
+  "from-blue-500 to-indigo-600",
+  "from-pink-500 to-rose-600",
+  "from-green-500 to-emerald-600",
+  "from-orange-500 to-red-500",
+  "from-purple-500 to-violet-600",
+  "from-teal-500 to-cyan-600",
+  "from-amber-500 to-orange-600",
+  "from-slate-600 to-slate-800",
+];
+
+function gradientFor(id) {
+  const s = String(id);
+  let hash = 0;
+  for (let i = 0; i < s.length; i++) hash = (hash * 31 + s.charCodeAt(i)) >>> 0;
+  return GRADIENTS[hash % GRADIENTS.length];
+}
+
 function formatDate(unixSec) {
   if (!unixSec) return "";
   const d = new Date(unixSec * 1000);
@@ -79,22 +97,24 @@ function renderProjects(projects) {
 
   if (sorted.length === 0) {
     projectList.innerHTML =
-      '<p class="text-slate-400 text-center text-xs py-6">아직 프로젝트가 없어요.<br>위 버튼을 눌러 만들어보세요!</p>';
+      '<div class="col-span-2"><p class="text-slate-400 text-center text-xs py-6">아직 프로젝트가 없어요.<br>위 버튼을 눌러 만들어보세요!</p></div>';
     return;
   }
 
   projectList.innerHTML = sorted
     .map(
       (p) => `
-    <div class="flex items-center gap-2 px-3 py-1.5 bg-white rounded-xl border border-slate-200">
-      <button class="project-open flex-1 flex items-center gap-2 min-w-0 active:opacity-60 transition text-left py-0.5" data-id="${p.id}">
-        <span class="w-7 h-7 rounded-md bg-amber-100 text-amber-700 flex items-center justify-center text-sm shrink-0">📂</span>
-        <div class="flex-1 min-w-0 leading-tight">
-          <p class="text-xs font-medium break-all">${escapeHtml(p.name)}</p>
-          <p class="text-[10px] text-slate-400 mt-0.5">${formatDate(p.created_at)}</p>
+    <div class="relative aspect-square bg-white rounded-2xl border border-slate-100 shadow-sm active:scale-[0.97] transition-transform">
+      <button class="project-open block w-full h-full text-left p-3" data-id="${p.id}">
+        <div class="flex flex-col h-full justify-between">
+          <div class="w-12 h-12 rounded-xl bg-gradient-to-br ${gradientFor(p.id)} text-white text-2xl flex items-center justify-center shadow-md">📁</div>
+          <div class="mt-2 min-w-0">
+            <p class="text-sm font-bold break-all leading-tight line-clamp-3">${escapeHtml(p.name)}</p>
+            <p class="text-[10px] text-slate-400 mt-1">${formatDate(p.created_at)}</p>
+          </div>
         </div>
       </button>
-      <button class="project-delete text-slate-400 active:text-red-500 px-1.5 py-1 text-base shrink-0 self-center" data-id="${p.id}" data-name="${escapeHtml(p.name)}" aria-label="프로젝트 삭제">🗑</button>
+      <button class="project-delete absolute top-1.5 right-1.5 text-slate-300 active:text-red-500 text-base px-1.5 py-1" data-id="${p.id}" data-name="${escapeHtml(p.name)}" aria-label="프로젝트 삭제">🗑</button>
     </div>
   `
     )
