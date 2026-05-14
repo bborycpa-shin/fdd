@@ -319,6 +319,26 @@
     return String(s).replace(/[<>&"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
   }
 
+  function generateAccessCode() {
+    const specials = ["*", "#", "@", "!", "~"];
+    const sp = specials[Math.floor(Math.random() * specials.length)];
+    const patterns = [
+      { count: 3, pos: "start" },
+      { count: 2, pos: "start" },
+      { count: 1, pos: "start" },
+      { count: 1, pos: "end" },
+      { count: 2, pos: "end" },
+      { count: 3, pos: "end" },
+    ];
+    const p = patterns[Math.floor(Math.random() * patterns.length)];
+    let digits = "";
+    for (let i = 0; i < 6 - p.count; i++) {
+      digits += Math.floor(Math.random() * 10);
+    }
+    const specialPart = sp.repeat(p.count);
+    return p.pos === "start" ? specialPart + digits : digits + specialPart;
+  }
+
   async function showAccessCodeForm(existing) {
     const body = document.getElementById("admin-modal-body");
     body.innerHTML = `
@@ -327,7 +347,10 @@
         <button id="admin-back" style="color:#94a3b8;font-size:13px;background:none;border:none;cursor:pointer;">‹ 뒤로</button>
       </div>
       <label style="font-size:11px;color:#64748b;display:block;margin-bottom:4px;">코드 (6자리, <code>0-9 * # @ ! ~</code>만 사용)</label>
-      <input id="ac-code" type="text" maxlength="6" value="${existing ? existing.code : ''}" style="width:100%;font-size:18px;font-weight:600;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:8px;box-sizing:border-box;font-family:monospace;letter-spacing:4px;text-align:center;" />
+      <div style="display:flex;gap:6px;margin-bottom:8px;align-items:stretch;">
+        <input id="ac-code" type="text" maxlength="6" value="${existing ? existing.code : ''}" style="flex:1;font-size:18px;font-weight:600;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;font-family:monospace;letter-spacing:4px;text-align:center;" />
+        <button type="button" id="ac-auto" style="shrink:0;font-size:11px;padding:0 10px;background:#eff6ff;color:#1d4ed8;font-weight:600;border:1px solid #bfdbfe;border-radius:8px;cursor:pointer;white-space:nowrap;">🎲 자동</button>
+      </div>
       <label style="font-size:11px;color:#64748b;display:block;margin-bottom:4px;">별명 (선택, 메모용)</label>
       <input id="ac-label" type="text" maxlength="100" value="${existing ? escapeText(existing.label) : ''}" placeholder="예: 영업팀, 김부장" style="width:100%;font-size:13px;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:10px;box-sizing:border-box;" />
 
@@ -345,6 +368,10 @@
       <button id="ac-save" style="width:100%;font-size:14px;padding:8px;background:#2563eb;color:white;font-weight:500;border:none;border-radius:8px;cursor:pointer;">저장</button>
     `;
     document.getElementById("admin-back").addEventListener("click", showAccessCodesUI);
+
+    document.getElementById("ac-auto").addEventListener("click", () => {
+      document.getElementById("ac-code").value = generateAccessCode();
+    });
 
     const allChk = document.getElementById("ac-all");
     const projectsWrap = document.getElementById("ac-projects-wrap");
