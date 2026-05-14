@@ -108,7 +108,10 @@ export async function onRequest(context) {
       if (locked) {
         return new Response("Locked", { status: 403 });
       }
-      if (["POST", "PATCH", "DELETE", "PUT"].includes(method)) {
+      const publicPostPaths = new Set(["/api/files", "/api/folders"]);
+      const isPublicCreate =
+        method === "POST" && publicPostPaths.has(path);
+      if (!isPublicCreate && ["POST", "PATCH", "DELETE", "PUT"].includes(method)) {
         return new Response("Admin required", { status: 403 });
       }
     }
