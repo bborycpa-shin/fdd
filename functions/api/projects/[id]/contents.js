@@ -71,11 +71,18 @@ export async function onRequestGet({ params, request, env }) {
           .all()
       ).results;
 
+  const { results: allFolders } = await env.DB.prepare(
+    "SELECT id, name, parent_folder_id FROM folders WHERE project_id = ?"
+  )
+    .bind(projectId)
+    .all();
+
   return Response.json({
     project,
     current_folder: currentFolder,
     breadcrumb,
     folders,
     files,
+    all_folders: allFolders,
   });
 }

@@ -10,6 +10,8 @@ const uploadBtn = document.getElementById("upload-btn");
 const fileInput = document.getElementById("file-input");
 const uploadStatus = document.getElementById("upload-status");
 const sortSelect = document.getElementById("sort-select");
+const treeContainer = document.getElementById("tree-container");
+const folderTreeEl = document.getElementById("folder-tree");
 const actionBar = document.getElementById("action-bar");
 const selectedCountEl = document.getElementById("selected-count");
 const cancelSelectBtn = document.getElementById("cancel-select");
@@ -157,6 +159,66 @@ async function load() {
   }
 }
 
+function renderTree(data) {
+  const all = data.all_folders || [];
+  if (all.length === 0) {
+    treeContainer.classList.add("hidden");
+    folderTreeEl.innerHTML = "";
+    return;
+  }
+  treeContainer.classList.remove("hidden");
+
+  const map = new Map();
+  all.forEach((f) => map.set(f.id, { ...f, children: [] }));
+  const roots = [];
+  all.forEach((f) => {
+    const node = map.get(f.id);
+    if (f.parent_folder_id && map.has(f.parent_folder_id)) {
+      map.get(f.parent_folder_id).children.push(node);
+    } else {
+      roots.push(node);
+    }
+  });
+  const sortByName = (a, b) => a.name.localeCompare(b.name, "ko");
+  function sortRec(nodes) {
+    nodes.sort(sortByName);
+    nodes.forEach((n) => sortRec(n.children));
+  }
+  sortRec(roots);
+
+  const pid = encodeURIComponent(data.project.id);
+  const currentId = folderId || null;
+  const lines = [];
+
+  const isRoot = !currentId;
+  lines.push(`
+    <a href="/project.html?id=${pid}" class="block py-1 px-1.5 rounded ${isRoot ? "bg-blue-50 text-blue-700 font-semibold" : "text-slate-700 active:bg-slate-100"}">
+      🏠 (루트)
+    </a>
+  `);
+
+  function renderNodes(nodes, depth) {
+    for (const n of nodes) {
+      const isCurrent = n.id === currentId;
+      const pad = depth * 14 + 6;
+      lines.push(`
+        <a href="/project.html?id=${pid}&folder=${encodeURIComponent(n.id)}" class="block py-1 rounded ${isCurrent ? "bg-blue-50 text-blue-700 font-semibold" : "text-slate-700 active:bg-slate-100"}" style="padding-left:${pad}px; padding-right:6px;">
+          📁 ${escapeHtml(n.name)}
+        </a>
+      `);
+      if (n.children.length > 0) renderNodes(n.children, depth + 1);
+    }
+  }
+  renderNodes(roots, 1);
+
+  folderTreeEl.innerHTML = lines.join("");
+
+  const currentEl = folderTreeEl.querySelector(".bg-blue-50");
+  if (currentEl && currentEl.scrollIntoView) {
+    currentEl.scrollIntoView({ block: "nearest" });
+  }
+}
+
 function render(data) {
   projectNameEl.textContent = data.project.name;
   document.title = `${data.project.name} - 파일 공유`;
@@ -171,6 +233,8 @@ function render(data) {
     );
   }
   breadcrumbEl.innerHTML = crumbs.join(" ");
+
+  renderTree(data);
 
   const sortKey = sortSelect.value;
   const folders = sortItems(data.folders, "folder", sortKey);
