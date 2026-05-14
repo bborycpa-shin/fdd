@@ -23,6 +23,33 @@ async function requireAdmin(request, env) {
   return !!stored && hash === stored;
 }
 
+async function upsertSetting(env, key, value) {
+  const exists = await env.DB.prepare(
+    "SELECT 1 FROM settings WHERE key = ?"
+  )
+    .bind(key)
+    .first();
+  if (exists) {
+    await env.DB.prepare("UPDATE settings SET value = ? WHERE key = ?")
+      .bind(value, key)
+      .run();
+  } else {
+    await env.DB.prepare(
+      "INSERT INTO settings (key, value) VALUES (?, ?)"
+    )
+      .bind(key, value)
+      .run();
+  }
+}
+
+export async function onRequestGet({ request, env }) {
+  if (!(await requireAdmin(request, env))) {
+    return new Response("Admin required", { status: 403 });
+  }
+  const plain = await getSetting(env, "user_password_plain");
+  return Response.json({ password: plain || "" });
+}
+
 export async function onRequestPost({ request, env }) {
   if (!(await requireAdmin(request, env))) {
     return new Response("Admin required", { status: 403 });
@@ -36,21 +63,10 @@ export async function onRequestPost({ request, env }) {
   }
   const pw = String(body.password || "");
   if (!pw) return new Response("password required", { status: 400 });
-  if (pw.length < 1)
-    return new Response("password too short", { status: 400 });
 
   const hash = await sha256Hex(pw);
-  const exists = await getSetting(env, "user_password_hash");
-  if (exists !== null) {
-    await env.DB.prepare("UPDATE settings SET value = ? WHERE key = ?")
-      .bind(hash, "user_password_hash")
-      .run();
-  } else {
-    await env.DB.prepare(
-      "INSERT INTO settings (key, value) VALUES (?, ?)"
-    )
-      .bind("user_password_hash", hash)
-      .run();
-  }
+  await upsertSetting(env, "user_password_hash", hash);
+  await upsertSetting(env, "user_password_plain", pw);
+
   return Response.json({ ok: true });
 }

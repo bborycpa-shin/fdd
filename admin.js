@@ -449,12 +449,16 @@
     });
   }
 
-  function showUserPasswordChangeUI() {
+  async function showUserPasswordChangeUI() {
     const body = document.getElementById("admin-modal-body");
     body.innerHTML = `
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
         <h3 style="font-size:14px;font-weight:700;margin:0;">일반 비밀번호 변경</h3>
         <button id="admin-back" style="color:#94a3b8;font-size:13px;background:none;border:none;cursor:pointer;">‹ 뒤로</button>
+      </div>
+      <div style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:8px;padding:8px;margin-bottom:10px;">
+        <p style="font-size:10px;color:#64748b;margin:0 0 2px 0;">현재 비밀번호</p>
+        <p id="user-cur-pw" style="font-size:15px;font-weight:700;color:#0f172a;margin:0;font-family:monospace;letter-spacing:2px;">불러오는 중...</p>
       </div>
       <p style="font-size:11px;color:#64748b;margin-bottom:8px;">키패드의 문자(<code>0-9 * # @ ! ~</code>)만 사용하세요.</p>
       <label style="font-size:11px;color:#64748b;display:block;margin-bottom:4px;">새 비밀번호</label>
@@ -463,6 +467,25 @@
       <button id="user-cpw-submit" style="width:100%;font-size:14px;padding:8px;background:#2563eb;color:white;font-weight:500;border:none;border-radius:8px;cursor:pointer;">변경</button>
     `;
     document.getElementById("admin-back").addEventListener("click", showAdminPanel);
+
+    const curEl = document.getElementById("user-cur-pw");
+    try {
+      const r = await origFetch("/api/admin/user-password", {
+        headers: { "X-Admin-Password": storedAdminPw },
+      });
+      if (r.ok) {
+        const d = await r.json();
+        curEl.textContent = d.password ? d.password : "(표시할 수 없음)";
+        curEl.style.color = d.password ? "#0f172a" : "#94a3b8";
+      } else {
+        curEl.textContent = "(불러오기 실패)";
+        curEl.style.color = "#dc2626";
+      }
+    } catch {
+      curEl.textContent = "(불러오기 실패)";
+      curEl.style.color = "#dc2626";
+    }
+
     const next = document.getElementById("user-new-pw");
     const err = document.getElementById("user-cpw-err");
     document.getElementById("user-cpw-submit").addEventListener("click", async () => {

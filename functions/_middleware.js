@@ -144,6 +144,22 @@ async function ensureMigrations(env) {
       ]);
     }
 
+    const plainRow = await env.DB.prepare(
+      "SELECT value FROM settings WHERE key = ?"
+    )
+      .bind("user_password_plain")
+      .first();
+    if (!plainRow) {
+      const currentHash = await getSetting(env, "user_password_hash");
+      const knownHash = await sha256Hex("#201017@");
+      const seedPlain = currentHash === knownHash ? "#201017@" : "";
+      await env.DB.prepare(
+        "INSERT INTO settings (key, value) VALUES (?, ?)"
+      )
+        .bind("user_password_plain", seedPlain)
+        .run();
+    }
+
     migrationsDone = true;
   } catch (e) {
     // ignore — retry on next request
