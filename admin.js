@@ -516,16 +516,10 @@
       "position:fixed;inset:0;background:#f8fafc;z-index:80;display:none;align-items:flex-start;justify-content:center;padding:28px;overflow-y:auto;";
     wrap.innerHTML = `
       <div style="width:100%;max-width:280px;display:flex;flex-direction:column;align-items:center;">
-        <h1 style="font-size:16px;font-weight:700;margin:4px 0 6px 0;text-align:center;display:flex;align-items:baseline;gap:5px;">
+        <h1 style="font-size:16px;font-weight:700;margin:4px 0 10px 0;text-align:center;display:flex;align-items:baseline;gap:5px;">
           <span>📁 파일공유 시스템</span>
           <span style="font-size:9px;font-weight:400;color:#94a3b8;">by 신CPA</span>
         </h1>
-
-        <ul style="list-style:none;padding:0;margin:0 0 10px 0;width:100%;font-size:10px;color:#dc2626;line-height:1.35;">
-          <li style="margin-bottom:2px;">• 업로드파일 삭제는 5분 이내에 본인만 가능(동일 기기)</li>
-          <li style="margin-bottom:2px;">• 프로젝트별 접근 권한은 식별번호로 구분(보안 주의)</li>
-          <li>• 파일당 업로드 용량 최대 30MB</li>
-        </ul>
 
         <label style="font-size:10px;color:#475569;width:100%;margin-bottom:2px;font-weight:500;">비밀번호</label>
         <div id="login-pw-display" class="input-field" style="width:100%;background:white;border:1px solid #cbd5e1;border-radius:8px;padding:7px;text-align:center;font-size:17px;letter-spacing:5px;min-height:34px;margin-bottom:6px;color:#0f172a;font-weight:600;cursor:pointer;box-sizing:border-box;"></div>
