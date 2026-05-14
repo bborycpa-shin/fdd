@@ -1,5 +1,16 @@
 const projectList = document.getElementById("project-list");
 const newProjectBtn = document.getElementById("new-project-btn");
+const sortSelect = document.getElementById("sort-select");
+
+const SORT_KEY = "fdd_sort_main_v1";
+sortSelect.value = localStorage.getItem(SORT_KEY) || "created_desc";
+
+let cachedProjects = null;
+
+sortSelect.addEventListener("change", () => {
+  localStorage.setItem(SORT_KEY, sortSelect.value);
+  if (cachedProjects) renderProjects(cachedProjects);
+});
 
 function escapeHtml(str) {
   return String(str).replace(
@@ -9,12 +20,41 @@ function escapeHtml(str) {
   );
 }
 
+function formatDate(unixSec) {
+  if (!unixSec) return "";
+  const d = new Date(unixSec * 1000);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}.${m}.${day}`;
+}
+
+function sortProjects(projects, key) {
+  const arr = [...projects];
+  switch (key) {
+    case "created_desc":
+      arr.sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
+      break;
+    case "created_asc":
+      arr.sort((a, b) => (a.created_at || 0) - (b.created_at || 0));
+      break;
+    case "name_asc":
+      arr.sort((a, b) => a.name.localeCompare(b.name, "ko"));
+      break;
+    case "name_desc":
+      arr.sort((a, b) => b.name.localeCompare(a.name, "ko"));
+      break;
+  }
+  return arr;
+}
+
 async function loadProjects() {
   try {
     const res = await fetch("/api/projects");
     if (!res.ok) throw new Error();
     const data = await res.json();
-    renderProjects(data.projects || []);
+    cachedProjects = data.projects || [];
+    renderProjects(cachedProjects);
   } catch (e) {
     projectList.innerHTML =
       '<p class="text-red-500 text-center text-sm py-6">불러오기 실패</p>';
@@ -22,19 +62,24 @@ async function loadProjects() {
 }
 
 function renderProjects(projects) {
-  if (projects.length === 0) {
+  const sorted = sortProjects(projects, sortSelect.value);
+
+  if (sorted.length === 0) {
     projectList.innerHTML =
-      '<p class="text-slate-400 text-center text-sm py-6">아직 프로젝트가 없어요.<br>위 버튼을 눌러 만들어보세요!</p>';
+      '<p class="text-slate-400 text-center text-xs py-6">아직 프로젝트가 없어요.<br>위 버튼을 눌러 만들어보세요!</p>';
     return;
   }
 
-  projectList.innerHTML = projects
+  projectList.innerHTML = sorted
     .map(
       (p) => `
-    <div class="flex items-center gap-2 px-3 py-2 bg-white rounded-xl border border-slate-200">
-      <button class="project-open flex-1 flex items-center gap-2 min-w-0 active:opacity-60 transition text-left" data-id="${p.id}">
-        <span class="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center text-base shrink-0">📂</span>
-        <span class="text-sm font-medium break-all leading-snug">${escapeHtml(p.name)}</span>
+    <div class="flex items-center gap-2 px-3 py-1.5 bg-white rounded-xl border border-slate-200">
+      <button class="project-open flex-1 flex items-center gap-2 min-w-0 active:opacity-60 transition text-left py-0.5" data-id="${p.id}">
+        <span class="w-7 h-7 rounded-md bg-amber-100 text-amber-700 flex items-center justify-center text-sm shrink-0">📂</span>
+        <div class="flex-1 min-w-0 leading-tight">
+          <p class="text-xs font-medium break-all">${escapeHtml(p.name)}</p>
+          <p class="text-[10px] text-slate-400 mt-0.5">${formatDate(p.created_at)}</p>
+        </div>
       </button>
       <button class="project-delete text-slate-400 active:text-red-500 px-1.5 py-1 text-base shrink-0 self-center" data-id="${p.id}" data-name="${escapeHtml(p.name)}" aria-label="프로젝트 삭제">🗑</button>
     </div>

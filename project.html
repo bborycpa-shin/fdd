@@ -11,9 +11,9 @@
   <style>
     body {
       padding-top: env(safe-area-inset-top);
-      padding-bottom: env(safe-area-inset-bottom);
     }
-    input, button { font-size: 16px; }
+    input, button, select { font-size: 16px; }
+    select { font-size: 12px; }
     body.drag-active::after {
       content: '⬆ 여기에 파일을 놓아주세요';
       position: fixed;
@@ -35,12 +35,12 @@
   </style>
 </head>
 <body class="bg-slate-50 text-slate-900 min-h-screen">
-  <main class="max-w-md mx-auto px-3 py-4">
+  <main class="max-w-md mx-auto px-3 py-4 pb-24">
     <a href="/" class="inline-flex items-center text-slate-600 active:text-slate-900 mb-2 text-xs">
       ← 프로젝트 목록
     </a>
 
-    <h1 id="project-name" class="text-base font-bold mb-1 truncate h-6">&nbsp;</h1>
+    <h1 id="project-name" class="text-base font-bold mb-1 break-all leading-tight">&nbsp;</h1>
 
     <nav id="breadcrumb" class="text-xs text-slate-500 mb-3 h-5 flex items-center gap-1 overflow-x-auto whitespace-nowrap">
       <span>🏠</span>
@@ -63,23 +63,56 @@
 
     <input id="file-input" type="file" multiple class="hidden" />
 
+    <div class="flex items-center gap-1.5 mt-3 mb-2">
+      <span class="text-[11px] text-slate-500">정렬</span>
+      <select id="sort-select" class="bg-white border border-slate-300 rounded-lg px-2 py-0.5">
+        <option value="created_desc">최신순</option>
+        <option value="created_asc">오래된순</option>
+        <option value="name_asc">이름순</option>
+        <option value="name_desc">이름 역순</option>
+        <option value="size_desc">큰 파일순</option>
+        <option value="size_asc">작은 파일순</option>
+      </select>
+    </div>
+
     <p id="upload-status" class="text-xs text-blue-600 mt-2 mb-1 hidden text-center"></p>
 
     <div id="contents" class="space-y-1.5 mt-2">
-      <div class="flex items-center gap-2 px-3 py-2 bg-white rounded-xl border border-slate-200 animate-pulse">
-        <div class="w-8 h-8 rounded-lg bg-slate-200 shrink-0"></div>
-        <div class="flex-1 h-3.5 bg-slate-200 rounded"></div>
+      <div class="flex items-center gap-2 px-3 py-1.5 bg-white rounded-xl border border-slate-200 animate-pulse">
+        <div class="w-7 h-7 rounded-md bg-slate-200 shrink-0"></div>
+        <div class="flex-1 space-y-1">
+          <div class="h-3 bg-slate-200 rounded w-3/4"></div>
+          <div class="h-2 bg-slate-200 rounded w-1/3"></div>
+        </div>
       </div>
-      <div class="flex items-center gap-2 px-3 py-2 bg-white rounded-xl border border-slate-200 animate-pulse opacity-70">
-        <div class="w-8 h-8 rounded-lg bg-slate-200 shrink-0"></div>
-        <div class="flex-1 h-3.5 bg-slate-200 rounded"></div>
+      <div class="flex items-center gap-2 px-3 py-1.5 bg-white rounded-xl border border-slate-200 animate-pulse opacity-70">
+        <div class="w-7 h-7 rounded-md bg-slate-200 shrink-0"></div>
+        <div class="flex-1 space-y-1">
+          <div class="h-3 bg-slate-200 rounded w-2/3"></div>
+          <div class="h-2 bg-slate-200 rounded w-1/4"></div>
+        </div>
       </div>
-      <div class="flex items-center gap-2 px-3 py-2 bg-white rounded-xl border border-slate-200 animate-pulse opacity-40">
-        <div class="w-8 h-8 rounded-lg bg-slate-200 shrink-0"></div>
-        <div class="flex-1 h-3.5 bg-slate-200 rounded"></div>
+      <div class="flex items-center gap-2 px-3 py-1.5 bg-white rounded-xl border border-slate-200 animate-pulse opacity-40">
+        <div class="w-7 h-7 rounded-md bg-slate-200 shrink-0"></div>
+        <div class="flex-1 space-y-1">
+          <div class="h-3 bg-slate-200 rounded w-1/2"></div>
+          <div class="h-2 bg-slate-200 rounded w-1/4"></div>
+        </div>
       </div>
     </div>
   </main>
+
+  <div
+    id="action-bar"
+    class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-3 py-2.5 hidden z-40 shadow-[0_-4px_12px_rgba(0,0,0,0.05)]"
+    style="padding-bottom: calc(env(safe-area-inset-bottom) + 10px);"
+  >
+    <div class="max-w-md mx-auto flex items-center gap-2">
+      <span class="text-sm flex-1"><strong id="selected-count">0</strong>개 선택됨</span>
+      <button id="cancel-select" class="text-sm text-slate-600 px-3 py-1.5">취소</button>
+      <button id="bulk-delete" class="text-sm bg-red-600 text-white rounded-lg px-3 py-1.5 font-medium active:bg-red-700">🗑 삭제</button>
+    </div>
+  </div>
 
   <script src="/project.js"></script>
 </body>

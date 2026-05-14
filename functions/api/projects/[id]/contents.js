@@ -42,14 +42,14 @@ export async function onRequestGet({ params, request, env }) {
   const folders = folderId
     ? (
         await env.DB.prepare(
-          "SELECT id, name FROM folders WHERE project_id = ? AND parent_folder_id = ? ORDER BY name"
+          "SELECT id, name, created_at FROM folders WHERE project_id = ? AND parent_folder_id = ? ORDER BY name"
         )
           .bind(projectId, folderId)
           .all()
       ).results
     : (
         await env.DB.prepare(
-          "SELECT id, name FROM folders WHERE project_id = ? AND parent_folder_id IS NULL ORDER BY name"
+          "SELECT id, name, created_at FROM folders WHERE project_id = ? AND parent_folder_id IS NULL ORDER BY name"
         )
           .bind(projectId)
           .all()

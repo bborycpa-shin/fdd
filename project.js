@@ -9,6 +9,11 @@ const newFolderBtn = document.getElementById("new-folder-btn");
 const uploadBtn = document.getElementById("upload-btn");
 const fileInput = document.getElementById("file-input");
 const uploadStatus = document.getElementById("upload-status");
+const sortSelect = document.getElementById("sort-select");
+const actionBar = document.getElementById("action-bar");
+const selectedCountEl = document.getElementById("selected-count");
+const cancelSelectBtn = document.getElementById("cancel-select");
+const bulkDeleteBtn = document.getElementById("bulk-delete");
 
 if (!projectId) {
   location.href = "/";
@@ -84,6 +89,53 @@ function formatSize(bytes) {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
+function formatDate(unixSec) {
+  if (!unixSec) return "";
+  const d = new Date(unixSec * 1000);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}.${m}.${day}`;
+}
+
+const selectedFileIds = new Set();
+let cachedData = null;
+
+const SORT_KEY = "fdd_sort_v1";
+sortSelect.value = localStorage.getItem(SORT_KEY) || "created_desc";
+sortSelect.addEventListener("change", () => {
+  localStorage.setItem(SORT_KEY, sortSelect.value);
+  if (cachedData) render(cachedData);
+});
+
+function sortItems(items, kind, key) {
+  const arr = [...items];
+  const ts = (it) => (kind === "folder" ? it.created_at : it.uploaded_at) || 0;
+  switch (key) {
+    case "created_desc":
+      arr.sort((a, b) => ts(b) - ts(a));
+      break;
+    case "created_asc":
+      arr.sort((a, b) => ts(a) - ts(b));
+      break;
+    case "name_asc":
+      arr.sort((a, b) => a.name.localeCompare(b.name, "ko"));
+      break;
+    case "name_desc":
+      arr.sort((a, b) => b.name.localeCompare(a.name, "ko"));
+      break;
+    case "size_desc":
+      if (kind === "file") arr.sort((a, b) => b.size - a.size);
+      else arr.sort((a, b) => a.name.localeCompare(b.name, "ko"));
+      break;
+    case "size_asc":
+      if (kind === "file") arr.sort((a, b) => a.size - b.size);
+      else arr.sort((a, b) => a.name.localeCompare(b.name, "ko"));
+      break;
+  }
+  return arr;
+}
+
 async function load() {
   try {
     const url =
@@ -92,6 +144,12 @@ async function load() {
     const res = await fetch(url);
     if (!res.ok) throw new Error();
     const data = await res.json();
+    cachedData = data;
+
+    const visibleIds = new Set(data.files.map((f) => f.id));
+    for (const id of [...selectedFileIds]) {
+      if (!visibleIds.has(id)) selectedFileIds.delete(id);
+    }
     render(data);
   } catch (e) {
     contentsEl.innerHTML =
@@ -114,35 +172,47 @@ function render(data) {
   }
   breadcrumbEl.innerHTML = crumbs.join(" ");
 
-  if (data.folders.length === 0 && data.files.length === 0) {
+  const sortKey = sortSelect.value;
+  const folders = sortItems(data.folders, "folder", sortKey);
+  const files = sortItems(data.files, "file", sortKey);
+
+  if (folders.length === 0 && files.length === 0) {
     contentsEl.innerHTML =
-      '<p class="text-slate-400 text-center text-sm py-6">아직 비어있어요.<br>위 버튼으로 폴더를 만들거나 파일을 올려보세요!<br><span class="text-xs">PC에서는 화면에 파일을 끌어다 놓아도 돼요</span></p>';
+      '<p class="text-slate-400 text-center text-xs py-6">아직 비어있어요.<br>위 버튼으로 폴더를 만들거나 파일을 올려보세요!<br><span class="text-[10px]">PC에서는 화면에 파일을 끌어다 놓아도 돼요</span></p>';
+    updateActionBar();
     return;
   }
 
   const items = [];
 
-  for (const f of data.folders) {
+  for (const f of folders) {
     items.push(`
-      <div class="flex items-center gap-2 px-3 py-2 bg-white rounded-xl border border-slate-200">
-        <a href="/project.html?id=${encodeURIComponent(data.project.id)}&folder=${encodeURIComponent(f.id)}" class="flex-1 flex items-center gap-2 min-w-0 active:opacity-60 transition">
-          <span class="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center text-base shrink-0">📁</span>
-          <span class="text-sm font-medium break-all leading-snug">${escapeHtml(f.name)}</span>
+      <div class="flex items-center gap-2 px-3 py-1.5 bg-white rounded-xl border border-slate-200">
+        <a href="/project.html?id=${encodeURIComponent(data.project.id)}&folder=${encodeURIComponent(f.id)}" class="flex-1 flex items-center gap-2 min-w-0 active:opacity-60 transition py-0.5">
+          <span class="w-7 h-7 rounded-md bg-amber-100 text-amber-700 flex items-center justify-center text-sm shrink-0">📁</span>
+          <div class="flex-1 min-w-0 leading-tight">
+            <p class="text-xs font-medium break-all">${escapeHtml(f.name)}</p>
+            <p class="text-[10px] text-slate-400 mt-0.5">${formatDate(f.created_at)}</p>
+          </div>
         </a>
         <button class="folder-delete text-slate-400 active:text-red-500 px-1.5 py-1 text-base shrink-0 self-center" data-id="${f.id}" data-name="${escapeHtml(f.name)}" aria-label="폴더 삭제">🗑</button>
       </div>
     `);
   }
 
-  for (const file of data.files) {
+  for (const file of files) {
     const icon = getFileIcon(file.name);
+    const isChecked = selectedFileIds.has(file.id);
     items.push(`
-      <div class="flex items-center gap-2 px-3 py-2 bg-white rounded-xl border border-slate-200">
+      <div class="flex items-center gap-2 px-3 py-1.5 bg-white rounded-xl border ${isChecked ? "border-blue-400 bg-blue-50" : "border-slate-200"}">
+        <label class="shrink-0 self-center p-1 -ml-1 cursor-pointer">
+          <input type="checkbox" class="file-check w-4 h-4 align-middle accent-blue-600" data-id="${file.id}" ${isChecked ? "checked" : ""} />
+        </label>
         <a href="/api/files/${encodeURIComponent(file.id)}/download" class="flex-1 flex items-start gap-2 min-w-0 active:opacity-60 transition py-0.5" target="_blank" rel="noopener">
-          <span class="w-8 h-8 rounded-lg ${icon.color} text-white flex items-center justify-center text-[9px] font-bold shrink-0 mt-0.5">${icon.label}</span>
-          <div class="flex-1 min-w-0 leading-snug">
-            <p class="text-sm font-medium break-all">${escapeHtml(file.name)}</p>
-            <p class="text-xs text-slate-400 mt-0.5">${formatSize(file.size)}</p>
+          <span class="w-7 h-7 rounded-md ${icon.color} text-white flex items-center justify-center text-[8px] font-bold shrink-0 mt-0.5">${icon.label}</span>
+          <div class="flex-1 min-w-0 leading-tight">
+            <p class="text-xs font-medium break-all">${escapeHtml(file.name)}</p>
+            <p class="text-[10px] text-slate-400 mt-0.5">${formatSize(file.size)} · ${formatDate(file.uploaded_at)}</p>
           </div>
         </a>
         <button class="file-delete text-slate-400 active:text-red-500 px-1.5 py-1 text-base shrink-0 self-center" data-id="${file.id}" data-name="${escapeHtml(file.name)}" aria-label="파일 삭제">🗑</button>
@@ -180,13 +250,77 @@ function render(data) {
       try {
         const res = await fetch(`/api/files/${id}`, { method: "DELETE" });
         if (!res.ok) throw new Error();
+        selectedFileIds.delete(id);
         await load();
       } catch (e) {
         alert("삭제 실패");
       }
     });
   });
+
+  contentsEl.querySelectorAll(".file-check").forEach((cb) => {
+    cb.addEventListener("change", () => {
+      const id = cb.dataset.id;
+      if (cb.checked) selectedFileIds.add(id);
+      else selectedFileIds.delete(id);
+      const row = cb.closest("div.flex.items-center");
+      if (row) {
+        if (cb.checked) {
+          row.classList.add("border-blue-400", "bg-blue-50");
+          row.classList.remove("border-slate-200");
+        } else {
+          row.classList.remove("border-blue-400", "bg-blue-50");
+          row.classList.add("border-slate-200");
+        }
+      }
+      updateActionBar();
+    });
+  });
+
+  updateActionBar();
 }
+
+function updateActionBar() {
+  const count = selectedFileIds.size;
+  if (count === 0) {
+    actionBar.classList.add("hidden");
+  } else {
+    actionBar.classList.remove("hidden");
+    selectedCountEl.textContent = count;
+  }
+}
+
+cancelSelectBtn.addEventListener("click", () => {
+  selectedFileIds.clear();
+  if (cachedData) render(cachedData);
+});
+
+bulkDeleteBtn.addEventListener("click", async () => {
+  const ids = [...selectedFileIds];
+  if (ids.length === 0) return;
+  if (!confirm(`선택한 ${ids.length}개 파일을 삭제할까요?`)) return;
+
+  bulkDeleteBtn.disabled = true;
+  bulkDeleteBtn.textContent = "삭제 중...";
+
+  const results = await Promise.allSettled(
+    ids.map((id) =>
+      fetch(`/api/files/${encodeURIComponent(id)}`, { method: "DELETE" })
+    )
+  );
+  const failed = results.filter(
+    (r) => r.status === "rejected" || !r.value.ok
+  ).length;
+
+  bulkDeleteBtn.disabled = false;
+  bulkDeleteBtn.textContent = "🗑 삭제";
+
+  if (failed > 0) {
+    alert(`${ids.length - failed}개 삭제, ${failed}개 실패`);
+  }
+  selectedFileIds.clear();
+  await load();
+});
 
 async function uploadFiles(files) {
   if (!files || files.length === 0) return;

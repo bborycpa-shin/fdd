@@ -13,7 +13,8 @@
       padding-top: env(safe-area-inset-top);
       padding-bottom: env(safe-area-inset-bottom);
     }
-    input, button { font-size: 16px; }
+    input, button, select { font-size: 16px; }
+    select { font-size: 12px; }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-900 min-h-screen">
@@ -30,18 +31,37 @@
       + 새 프로젝트
     </button>
 
+    <div class="flex items-center gap-1.5 mb-2">
+      <span class="text-[11px] text-slate-500">정렬</span>
+      <select id="sort-select" class="bg-white border border-slate-300 rounded-lg px-2 py-0.5">
+        <option value="created_desc">최신순</option>
+        <option value="created_asc">오래된순</option>
+        <option value="name_asc">이름순</option>
+        <option value="name_desc">이름 역순</option>
+      </select>
+    </div>
+
     <div id="project-list" class="space-y-1.5">
-      <div class="flex items-center gap-2 px-3 py-2 bg-white rounded-xl border border-slate-200 animate-pulse">
-        <div class="w-8 h-8 rounded-lg bg-slate-200 shrink-0"></div>
-        <div class="flex-1 h-3.5 bg-slate-200 rounded"></div>
+      <div class="flex items-center gap-2 px-3 py-1.5 bg-white rounded-xl border border-slate-200 animate-pulse">
+        <div class="w-7 h-7 rounded-md bg-slate-200 shrink-0"></div>
+        <div class="flex-1 space-y-1">
+          <div class="h-3 bg-slate-200 rounded w-3/4"></div>
+          <div class="h-2 bg-slate-200 rounded w-1/3"></div>
+        </div>
       </div>
-      <div class="flex items-center gap-2 px-3 py-2 bg-white rounded-xl border border-slate-200 animate-pulse opacity-70">
-        <div class="w-8 h-8 rounded-lg bg-slate-200 shrink-0"></div>
-        <div class="flex-1 h-3.5 bg-slate-200 rounded"></div>
+      <div class="flex items-center gap-2 px-3 py-1.5 bg-white rounded-xl border border-slate-200 animate-pulse opacity-70">
+        <div class="w-7 h-7 rounded-md bg-slate-200 shrink-0"></div>
+        <div class="flex-1 space-y-1">
+          <div class="h-3 bg-slate-200 rounded w-2/3"></div>
+          <div class="h-2 bg-slate-200 rounded w-1/4"></div>
+        </div>
       </div>
-      <div class="flex items-center gap-2 px-3 py-2 bg-white rounded-xl border border-slate-200 animate-pulse opacity-40">
-        <div class="w-8 h-8 rounded-lg bg-slate-200 shrink-0"></div>
-        <div class="flex-1 h-3.5 bg-slate-200 rounded"></div>
+      <div class="flex items-center gap-2 px-3 py-1.5 bg-white rounded-xl border border-slate-200 animate-pulse opacity-40">
+        <div class="w-7 h-7 rounded-md bg-slate-200 shrink-0"></div>
+        <div class="flex-1 space-y-1">
+          <div class="h-3 bg-slate-200 rounded w-1/2"></div>
+          <div class="h-2 bg-slate-200 rounded w-1/4"></div>
+        </div>
       </div>
     </div>
   </main>
