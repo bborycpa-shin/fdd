@@ -24,13 +24,11 @@ async function isAdminRequest(request, env) {
   }
 }
 
-const OWNER_DELETE_WINDOW_SEC = 5 * 60;
-
 export async function onRequestDelete({ params, request, env }) {
   const id = params.id;
 
   const file = await env.DB.prepare(
-    "SELECT r2_key, uploader_id, uploaded_at FROM files WHERE id = ?"
+    "SELECT r2_key, uploader_access_code FROM files WHERE id = ?"
   )
     .bind(id)
     .first();
@@ -39,16 +37,11 @@ export async function onRequestDelete({ params, request, env }) {
 
   const admin = await isAdminRequest(request, env);
   if (!admin) {
-    const uploaderId = String(
-      request.headers.get("X-Uploader-Id") || ""
+    const accessCode = String(
+      request.headers.get("X-Access-Code") || ""
     ).trim();
-    if (!uploaderId || uploaderId !== file.uploader_id) {
+    if (!accessCode || accessCode !== file.uploader_access_code) {
       return new Response("Forbidden", { status: 403 });
-    }
-    const nowSec = Math.floor(Date.now() / 1000);
-    const ageSec = nowSec - (file.uploaded_at || 0);
-    if (ageSec > OWNER_DELETE_WINDOW_SEC) {
-      return new Response("Owner delete window expired", { status: 403 });
     }
   }
 

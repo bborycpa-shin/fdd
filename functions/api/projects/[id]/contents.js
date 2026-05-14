@@ -55,7 +55,7 @@ export async function onRequestGet({ params, request, env, data }) {
   }
 
   const { results: recentRaw } = await env.DB.prepare(
-    "SELECT id, name, size, content_type, folder_id, uploaded_at FROM files WHERE project_id = ? ORDER BY uploaded_at DESC LIMIT 10"
+    "SELECT f.id, f.name, f.size, f.content_type, f.folder_id, f.uploaded_at, f.uploader_id, f.uploader_access_code, ac.label as uploader_label FROM files f LEFT JOIN access_codes ac ON f.uploader_access_code = ac.code WHERE f.project_id = ? ORDER BY f.uploaded_at DESC LIMIT 10"
   )
     .bind(projectId)
     .all();
@@ -66,7 +66,7 @@ export async function onRequestGet({ params, request, env, data }) {
 
   if (showAll) {
     const { results: allFiles } = await env.DB.prepare(
-      "SELECT id, name, size, content_type, folder_id, uploaded_at, uploader_id FROM files WHERE project_id = ?"
+      "SELECT f.id, f.name, f.size, f.content_type, f.folder_id, f.uploaded_at, f.uploader_id, f.uploader_access_code, ac.label as uploader_label FROM files f LEFT JOIN access_codes ac ON f.uploader_access_code = ac.code WHERE f.project_id = ?"
     )
       .bind(projectId)
       .all();
@@ -118,14 +118,14 @@ export async function onRequestGet({ params, request, env, data }) {
   const folders = folderId
     ? (
         await env.DB.prepare(
-          "SELECT id, name, created_at FROM folders WHERE project_id = ? AND parent_folder_id = ? ORDER BY name"
+          "SELECT f.id, f.name, f.created_at, f.creator_access_code, ac.label as creator_label FROM folders f LEFT JOIN access_codes ac ON f.creator_access_code = ac.code WHERE f.project_id = ? AND f.parent_folder_id = ? ORDER BY f.name"
         )
           .bind(projectId, folderId)
           .all()
       ).results
     : (
         await env.DB.prepare(
-          "SELECT id, name, created_at FROM folders WHERE project_id = ? AND parent_folder_id IS NULL ORDER BY name"
+          "SELECT f.id, f.name, f.created_at, f.creator_access_code, ac.label as creator_label FROM folders f LEFT JOIN access_codes ac ON f.creator_access_code = ac.code WHERE f.project_id = ? AND f.parent_folder_id IS NULL ORDER BY f.name"
         )
           .bind(projectId)
           .all()
@@ -134,14 +134,14 @@ export async function onRequestGet({ params, request, env, data }) {
   const files = folderId
     ? (
         await env.DB.prepare(
-          "SELECT id, name, size, content_type, uploaded_at, uploader_id FROM files WHERE project_id = ? AND folder_id = ? ORDER BY uploaded_at DESC"
+          "SELECT f.id, f.name, f.size, f.content_type, f.uploaded_at, f.uploader_id, f.uploader_access_code, ac.label as uploader_label FROM files f LEFT JOIN access_codes ac ON f.uploader_access_code = ac.code WHERE f.project_id = ? AND f.folder_id = ? ORDER BY f.uploaded_at DESC"
         )
           .bind(projectId, folderId)
           .all()
       ).results
     : (
         await env.DB.prepare(
-          "SELECT id, name, size, content_type, uploaded_at, uploader_id FROM files WHERE project_id = ? AND folder_id IS NULL ORDER BY uploaded_at DESC"
+          "SELECT f.id, f.name, f.size, f.content_type, f.uploaded_at, f.uploader_id, f.uploader_access_code, ac.label as uploader_label FROM files f LEFT JOIN access_codes ac ON f.uploader_access_code = ac.code WHERE f.project_id = ? AND f.folder_id IS NULL ORDER BY f.uploaded_at DESC"
         )
           .bind(projectId)
           .all()

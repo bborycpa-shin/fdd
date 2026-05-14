@@ -50,6 +50,8 @@ async function ensureMigrations(env) {
     await ensureColumn(env, "projects", "color_index", "INTEGER");
     await ensureColumn(env, "projects", "display_number", "INTEGER");
     await ensureColumn(env, "files", "uploader_id", "TEXT");
+    await ensureColumn(env, "files", "uploader_access_code", "TEXT");
+    await ensureColumn(env, "folders", "creator_access_code", "TEXT");
 
     await env.DB.prepare(
       "CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT)"

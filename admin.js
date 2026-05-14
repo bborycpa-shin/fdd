@@ -23,6 +23,7 @@
     localStorage.setItem(UPLOADER_KEY, uploaderId);
   }
   window.fddUploaderId = uploaderId;
+  window.fddAccessCode = storedAccessCode;
 
   let isAdmin = false;
   let userAuthenticated = false;

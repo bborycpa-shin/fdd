@@ -32,10 +32,12 @@ export async function onRequestPost({ request, env }) {
   }
 
   const id = crypto.randomUUID();
+  const creatorAccessCode =
+    String(request.headers.get("X-Access-Code") || "").trim() || null;
   await env.DB.prepare(
-    "INSERT INTO folders (id, project_id, parent_folder_id, name) VALUES (?, ?, ?, ?)"
+    "INSERT INTO folders (id, project_id, parent_folder_id, name, creator_access_code) VALUES (?, ?, ?, ?, ?)"
   )
-    .bind(id, project_id, parent_folder_id, name)
+    .bind(id, project_id, parent_folder_id, name, creatorAccessCode)
     .run();
 
   return Response.json(
