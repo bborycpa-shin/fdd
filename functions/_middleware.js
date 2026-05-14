@@ -49,6 +49,20 @@ async function ensureMigrations(env) {
         .run();
     }
 
+    const userPwRow = await env.DB.prepare(
+      "SELECT value FROM settings WHERE key = ?"
+    )
+      .bind("user_password_hash")
+      .first();
+    if (!userPwRow) {
+      const defaultHash = await sha256Hex("1234");
+      await env.DB.prepare(
+        "INSERT INTO settings (key, value) VALUES (?, ?)"
+      )
+        .bind("user_password_hash", defaultHash)
+        .run();
+    }
+
     const lockedRow = await env.DB.prepare(
       "SELECT value FROM settings WHERE key = ?"
     )
@@ -64,7 +78,7 @@ async function ensureMigrations(env) {
 
     migrationsDone = true;
   } catch (e) {
-    // ignore — retry on next request
+    // ignore
   }
 }
 
@@ -87,6 +101,19 @@ async function isAdminRequest(request, env) {
   }
 }
 
+async function isUserAuthenticated(request, env) {
+  if (await isAdminRequest(request, env)) return true;
+  const pw = request.headers.get("X-User-Password");
+  if (!pw) return false;
+  try {
+    const hash = await sha256Hex(pw);
+    const stored = await getSetting(env, "user_password_hash");
+    return !!stored && hash === stored;
+  } catch {
+    return false;
+  }
+}
+
 async function isLocked(env) {
   return (await getSetting(env, "locked")) === "1";
 }
@@ -98,15 +125,24 @@ export async function onRequest(context) {
   const path = url.pathname;
   const method = context.request.method.toUpperCase();
 
-  if (path.startsWith("/api/admin/")) {
+  if (
+    path.startsWith("/api/admin/") ||
+    path.startsWith("/api/auth/")
+  ) {
     return context.next();
   }
 
   if (path.startsWith("/api/")) {
     const adminMode = await isAdminRequest(context.request, context.env);
+    const userAuth = await isUserAuthenticated(context.request, context.env);
+    const userPwSet = !!(await getSetting(context.env, "user_password_hash"));
+
+    if (userPwSet && !userAuth) {
+      return new Response("Login required", { status: 401 });
+    }
+
     if (!adminMode) {
-      const locked = await isLocked(context.env);
-      if (locked) {
+      if (await isLocked(context.env)) {
         return new Response("Locked", { status: 403 });
       }
       const publicPostPaths = new Set(["/api/files", "/api/folders"]);
