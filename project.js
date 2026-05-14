@@ -8,13 +8,19 @@ const newFolderBtn = document.getElementById("new-folder-btn");
 const uploadBtn = document.getElementById("upload-btn");
 const fileInput = document.getElementById("file-input");
 const uploadStatus = document.getElementById("upload-status");
-const sortSelect = document.getElementById("sort-select");
+const sortBar = document.getElementById("sort-bar");
+const selectAllBtn = document.getElementById("select-all-btn");
 const treeContainer = document.getElementById("tree-container");
 const folderTreeEl = document.getElementById("folder-tree");
 const actionBar = document.getElementById("action-bar");
 const selectedCountEl = document.getElementById("selected-count");
 const cancelSelectBtn = document.getElementById("cancel-select");
+const bulkDownloadBtn = document.getElementById("bulk-download");
+const bulkMoveBtn = document.getElementById("bulk-move");
 const bulkDeleteBtn = document.getElementById("bulk-delete");
+const moveModal = document.getElementById("move-modal");
+const moveCancelBtn = document.getElementById("move-cancel");
+const moveFolderListEl = document.getElementById("move-folder-list");
 
 if (!projectId) {
   location.href = "/";
@@ -66,9 +72,13 @@ const FILE_ICON_MAP = {
   md: { color: "bg-slate-500", label: "MD" },
 };
 
-function getFileIcon(filename) {
+function getExt(filename) {
   const parts = String(filename).split(".");
-  const ext = parts.length > 1 ? parts.pop().toLowerCase() : "";
+  return parts.length > 1 ? parts.pop().toLowerCase() : "";
+}
+
+function getFileIcon(filename) {
+  const ext = getExt(filename);
   if (FILE_ICON_MAP[ext]) return FILE_ICON_MAP[ext];
   return {
     color: "bg-slate-400",
@@ -99,15 +109,29 @@ function formatDate(unixSec) {
   return `${y}.${m}.${day}`;
 }
 
+let currentSort = "created_desc";
 const selectedFileIds = new Set();
 let cachedData = null;
 
-const SORT_KEY = "fdd_sort_v1";
-sortSelect.value = localStorage.getItem(SORT_KEY) || "created_desc";
-sortSelect.addEventListener("change", () => {
-  localStorage.setItem(SORT_KEY, sortSelect.value);
-  if (cachedData) render(cachedData);
+function applySortChipStyles() {
+  sortBar.querySelectorAll(".sort-chip").forEach((chip) => {
+    const isCurrent = chip.dataset.sort === currentSort;
+    chip.className =
+      "sort-chip shrink-0 px-2.5 py-1 rounded-full border " +
+      (isCurrent
+        ? "bg-blue-600 text-white border-blue-600 font-semibold"
+        : "bg-white text-slate-700 border-slate-300 active:bg-slate-100");
+  });
+}
+
+sortBar.querySelectorAll(".sort-chip").forEach((chip) => {
+  chip.addEventListener("click", () => {
+    currentSort = chip.dataset.sort;
+    applySortChipStyles();
+    if (cachedData) render(cachedData);
+  });
 });
+applySortChipStyles();
 
 function sortItems(items, kind, key) {
   const arr = [...items];
@@ -125,37 +149,20 @@ function sortItems(items, kind, key) {
     case "name_desc":
       arr.sort((a, b) => b.name.localeCompare(a.name, "ko"));
       break;
-    case "size_desc":
-      if (kind === "file") arr.sort((a, b) => b.size - a.size);
-      else arr.sort((a, b) => a.name.localeCompare(b.name, "ko"));
-      break;
-    case "size_asc":
-      if (kind === "file") arr.sort((a, b) => a.size - b.size);
-      else arr.sort((a, b) => a.name.localeCompare(b.name, "ko"));
+    case "type":
+      if (kind === "file") {
+        arr.sort((a, b) => {
+          const eA = getExt(a.name);
+          const eB = getExt(b.name);
+          if (eA === eB) return a.name.localeCompare(b.name, "ko");
+          return eA.localeCompare(eB);
+        });
+      } else {
+        arr.sort((a, b) => a.name.localeCompare(b.name, "ko"));
+      }
       break;
   }
   return arr;
-}
-
-async function load() {
-  try {
-    const url =
-      `/api/projects/${encodeURIComponent(projectId)}/contents` +
-      (folderId ? `?folder=${encodeURIComponent(folderId)}` : "");
-    const res = await fetch(url);
-    if (!res.ok) throw new Error();
-    const data = await res.json();
-    cachedData = data;
-
-    const visibleIds = new Set(data.files.map((f) => f.id));
-    for (const id of [...selectedFileIds]) {
-      if (!visibleIds.has(id)) selectedFileIds.delete(id);
-    }
-    render(data);
-  } catch (e) {
-    contentsEl.innerHTML =
-      '<p class="text-red-500 text-center text-sm py-6">불러오기 실패</p>';
-  }
 }
 
 function renderTree(data) {
@@ -213,15 +220,37 @@ function renderTree(data) {
   }
 }
 
+async function load() {
+  try {
+    const url =
+      `/api/projects/${encodeURIComponent(projectId)}/contents` +
+      (folderId ? `?folder=${encodeURIComponent(folderId)}` : "");
+    const res = await fetch(url);
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    cachedData = data;
+
+    const visibleIds = new Set(data.files.map((f) => f.id));
+    for (const id of [...selectedFileIds]) {
+      if (!visibleIds.has(id)) selectedFileIds.delete(id);
+    }
+    render(data);
+  } catch (e) {
+    contentsEl.innerHTML =
+      '<p class="text-red-500 text-center text-sm py-6">불러오기 실패</p>';
+  }
+}
+
 function render(data) {
   projectNameEl.textContent = data.project.name;
   document.title = `${data.project.name} - 파일 공유`;
 
   renderTree(data);
 
-  const sortKey = sortSelect.value;
-  const folders = sortItems(data.folders, "folder", sortKey);
-  const files = sortItems(data.files, "file", sortKey);
+  const folders = sortItems(data.folders, "folder", currentSort);
+  const files = sortItems(data.files, "file", currentSort);
+
+  updateSelectAllChip(files);
 
   if (folders.length === 0 && files.length === 0) {
     contentsEl.innerHTML =
@@ -251,17 +280,18 @@ function render(data) {
     const icon = getFileIcon(file.name);
     const isChecked = selectedFileIds.has(file.id);
     items.push(`
-      <div class="flex items-center gap-2 px-3 py-1.5 bg-white rounded-xl border ${isChecked ? "border-blue-400 bg-blue-50" : "border-slate-200"}">
-        <label class="shrink-0 self-center p-1 -ml-1 cursor-pointer">
+      <div class="file-row flex items-center gap-2 px-3 py-1.5 rounded-xl border cursor-pointer ${isChecked ? "border-blue-400 bg-blue-50" : "border-slate-200 bg-white"}" data-id="${file.id}">
+        <label class="shrink-0 self-center p-1 -ml-1" onclick="event.stopPropagation()">
           <input type="checkbox" class="file-check w-4 h-4 align-middle accent-blue-600" data-id="${file.id}" ${isChecked ? "checked" : ""} />
         </label>
-        <a href="/api/files/${encodeURIComponent(file.id)}/download" class="flex-1 flex items-start gap-2 min-w-0 active:opacity-60 transition py-0.5" target="_blank" rel="noopener">
+        <div class="flex-1 flex items-start gap-2 min-w-0 py-0.5">
           <span class="w-7 h-7 rounded-md ${icon.color} text-white flex items-center justify-center text-[8px] font-bold shrink-0 mt-0.5">${icon.label}</span>
           <div class="flex-1 min-w-0 leading-tight">
             <p class="text-xs font-medium break-all">${escapeHtml(file.name)}</p>
             <p class="text-[10px] text-slate-400 mt-0.5">${formatSize(file.size)} · ${formatDate(file.uploaded_at)}</p>
           </div>
-        </a>
+        </div>
+        <button class="file-download text-slate-400 active:text-blue-600 px-1.5 py-1 text-base shrink-0 self-center" data-id="${file.id}" aria-label="다운로드">⬇</button>
         <button class="file-delete text-slate-400 active:text-red-500 px-1.5 py-1 text-base shrink-0 self-center" data-id="${file.id}" data-name="${escapeHtml(file.name)}" aria-label="파일 삭제">🗑</button>
       </div>
     `);
@@ -270,7 +300,8 @@ function render(data) {
   contentsEl.innerHTML = items.join("");
 
   contentsEl.querySelectorAll(".folder-delete").forEach((btn) => {
-    btn.addEventListener("click", async () => {
+    btn.addEventListener("click", async (e) => {
+      e.stopPropagation();
       const id = btn.dataset.id;
       const name = btn.dataset.name;
       if (
@@ -290,7 +321,8 @@ function render(data) {
   });
 
   contentsEl.querySelectorAll(".file-delete").forEach((btn) => {
-    btn.addEventListener("click", async () => {
+    btn.addEventListener("click", async (e) => {
+      e.stopPropagation();
       const id = btn.dataset.id;
       const name = btn.dataset.name;
       if (!confirm(`"${name}" 파일을 삭제할까요?`)) return;
@@ -305,27 +337,73 @@ function render(data) {
     });
   });
 
-  contentsEl.querySelectorAll(".file-check").forEach((cb) => {
-    cb.addEventListener("change", () => {
-      const id = cb.dataset.id;
-      if (cb.checked) selectedFileIds.add(id);
-      else selectedFileIds.delete(id);
-      const row = cb.closest("div.flex.items-center");
-      if (row) {
-        if (cb.checked) {
-          row.classList.add("border-blue-400", "bg-blue-50");
-          row.classList.remove("border-slate-200");
-        } else {
-          row.classList.remove("border-blue-400", "bg-blue-50");
-          row.classList.add("border-slate-200");
-        }
-      }
-      updateActionBar();
+  contentsEl.querySelectorAll(".file-download").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const id = btn.dataset.id;
+      window.open(`/api/files/${encodeURIComponent(id)}/download`, "_blank");
     });
   });
 
+  contentsEl.querySelectorAll(".file-check").forEach((cb) => {
+    cb.addEventListener("change", () => {
+      toggleFileSelected(cb.dataset.id, cb.checked);
+    });
+    cb.addEventListener("click", (e) => e.stopPropagation());
+  });
+
+  contentsEl.querySelectorAll(".file-row").forEach((row) => {
+    row.addEventListener("click", (e) => {
+      if (e.target.closest("button")) return;
+      if (e.target.closest("input")) return;
+      const id = row.dataset.id;
+      const nowSelected = !selectedFileIds.has(id);
+      toggleFileSelected(id, nowSelected);
+      const cb = row.querySelector(".file-check");
+      if (cb) cb.checked = nowSelected;
+      if (nowSelected) {
+        row.classList.add("border-blue-400", "bg-blue-50");
+        row.classList.remove("border-slate-200", "bg-white");
+      } else {
+        row.classList.remove("border-blue-400", "bg-blue-50");
+        row.classList.add("border-slate-200", "bg-white");
+      }
+    });
+  });
+}
+
+function toggleFileSelected(id, selected) {
+  if (selected) selectedFileIds.add(id);
+  else selectedFileIds.delete(id);
+  if (cachedData) updateSelectAllChip(sortItems(cachedData.files, "file", currentSort));
   updateActionBar();
 }
+
+function updateSelectAllChip(currentFiles) {
+  const files = currentFiles || (cachedData ? cachedData.files : []);
+  const fileIds = files.map((f) => f.id);
+  const allSelected =
+    fileIds.length > 0 && fileIds.every((id) => selectedFileIds.has(id));
+  selectAllBtn.innerHTML = allSelected ? "☑ 전체" : "☐ 전체";
+  selectAllBtn.className =
+    "shrink-0 px-2.5 py-1 rounded-full border " +
+    (allSelected
+      ? "bg-blue-600 text-white border-blue-600 font-semibold"
+      : "bg-white text-slate-700 border-slate-300 active:bg-slate-100");
+}
+
+selectAllBtn.addEventListener("click", () => {
+  if (!cachedData) return;
+  const fileIds = cachedData.files.map((f) => f.id);
+  if (fileIds.length === 0) return;
+  const allSelected = fileIds.every((id) => selectedFileIds.has(id));
+  if (allSelected) {
+    fileIds.forEach((id) => selectedFileIds.delete(id));
+  } else {
+    fileIds.forEach((id) => selectedFileIds.add(id));
+  }
+  render(cachedData);
+});
 
 function updateActionBar() {
   const count = selectedFileIds.size;
@@ -368,6 +446,122 @@ bulkDeleteBtn.addEventListener("click", async () => {
   selectedFileIds.clear();
   await load();
 });
+
+bulkDownloadBtn.addEventListener("click", () => {
+  const ids = [...selectedFileIds];
+  if (ids.length === 0) return;
+  if (ids.length > 5) {
+    if (!confirm(`${ids.length}개를 한 번에 받으면 브라우저가 일부를 막을 수 있어요. 계속할까요?`))
+      return;
+  }
+  ids.forEach((id, i) => {
+    setTimeout(() => {
+      window.open(`/api/files/${encodeURIComponent(id)}/download`, "_blank");
+    }, i * 200);
+  });
+});
+
+bulkMoveBtn.addEventListener("click", () => {
+  if (selectedFileIds.size === 0) return;
+  openMoveModal();
+});
+
+function openMoveModal() {
+  if (!cachedData) return;
+  const all = cachedData.all_folders || [];
+  const pid = cachedData.project.id;
+
+  const map = new Map();
+  all.forEach((f) => map.set(f.id, { ...f, children: [] }));
+  const roots = [];
+  all.forEach((f) => {
+    const node = map.get(f.id);
+    if (f.parent_folder_id && map.has(f.parent_folder_id)) {
+      map.get(f.parent_folder_id).children.push(node);
+    } else {
+      roots.push(node);
+    }
+  });
+  const sortByName = (a, b) => a.name.localeCompare(b.name, "ko");
+  function sortRec(nodes) {
+    nodes.sort(sortByName);
+    nodes.forEach((n) => sortRec(n.children));
+  }
+  sortRec(roots);
+
+  const rows = [];
+  const currentLoc = folderId || null;
+
+  rows.push(`
+    <button class="move-target w-full text-left px-2 py-2 rounded hover:bg-slate-100 active:bg-slate-200 ${currentLoc === null ? "opacity-50" : ""}" data-target="" ${currentLoc === null ? "disabled" : ""}>
+      🏠 ${escapeHtml(cachedData.project.name)}${currentLoc === null ? " (현재 위치)" : ""}
+    </button>
+  `);
+
+  function walk(nodes, depth) {
+    for (const n of nodes) {
+      const isCurrent = n.id === currentLoc;
+      const pad = depth * 14 + 8;
+      rows.push(`
+        <button class="move-target w-full text-left py-2 rounded hover:bg-slate-100 active:bg-slate-200 ${isCurrent ? "opacity-50" : ""}" data-target="${n.id}" ${isCurrent ? "disabled" : ""} style="padding-left:${pad}px; padding-right:8px;">
+          📁 ${escapeHtml(n.name)}${isCurrent ? " (현재 위치)" : ""}
+        </button>
+      `);
+      if (n.children.length > 0) walk(n.children, depth + 1);
+    }
+  }
+  walk(roots, 1);
+
+  moveFolderListEl.innerHTML = rows.join("");
+
+  moveFolderListEl.querySelectorAll(".move-target").forEach((btn) => {
+    if (btn.disabled) return;
+    btn.addEventListener("click", async () => {
+      const target = btn.dataset.target || null;
+      await moveSelectedFiles(target);
+    });
+  });
+
+  moveModal.style.display = "flex";
+}
+
+function closeMoveModal() {
+  moveModal.style.display = "none";
+  moveFolderListEl.innerHTML = "";
+}
+
+moveCancelBtn.addEventListener("click", closeMoveModal);
+moveModal.addEventListener("click", (e) => {
+  if (e.target === moveModal) closeMoveModal();
+});
+
+async function moveSelectedFiles(targetFolderId) {
+  const ids = [...selectedFileIds];
+  if (ids.length === 0) return;
+
+  const buttons = moveFolderListEl.querySelectorAll(".move-target");
+  buttons.forEach((b) => (b.disabled = true));
+
+  const results = await Promise.allSettled(
+    ids.map((id) =>
+      fetch(`/api/files/${encodeURIComponent(id)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ folder_id: targetFolderId }),
+      })
+    )
+  );
+  const failed = results.filter(
+    (r) => r.status === "rejected" || !r.value.ok
+  ).length;
+
+  if (failed > 0) {
+    alert(`${ids.length - failed}개 이동, ${failed}개 실패`);
+  }
+  selectedFileIds.clear();
+  closeMoveModal();
+  await load();
+}
 
 async function uploadFiles(files) {
   if (!files || files.length === 0) return;

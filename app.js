@@ -1,16 +1,29 @@
 const projectList = document.getElementById("project-list");
 const newProjectBtn = document.getElementById("new-project-btn");
-const sortSelect = document.getElementById("sort-select");
+const sortBar = document.getElementById("sort-bar");
 
-const SORT_KEY = "fdd_sort_main_v1";
-sortSelect.value = localStorage.getItem(SORT_KEY) || "created_desc";
-
+let currentSort = "created_desc";
 let cachedProjects = null;
 
-sortSelect.addEventListener("change", () => {
-  localStorage.setItem(SORT_KEY, sortSelect.value);
-  if (cachedProjects) renderProjects(cachedProjects);
+function applySortChipStyles() {
+  sortBar.querySelectorAll(".sort-chip").forEach((chip) => {
+    const isCurrent = chip.dataset.sort === currentSort;
+    chip.className =
+      "sort-chip shrink-0 px-2.5 py-1 rounded-full border " +
+      (isCurrent
+        ? "bg-blue-600 text-white border-blue-600 font-semibold"
+        : "bg-white text-slate-700 border-slate-300 active:bg-slate-100");
+  });
+}
+
+sortBar.querySelectorAll(".sort-chip").forEach((chip) => {
+  chip.addEventListener("click", () => {
+    currentSort = chip.dataset.sort;
+    applySortChipStyles();
+    if (cachedProjects) renderProjects(cachedProjects);
+  });
 });
+applySortChipStyles();
 
 function escapeHtml(str) {
   return String(str).replace(
@@ -62,7 +75,7 @@ async function loadProjects() {
 }
 
 function renderProjects(projects) {
-  const sorted = sortProjects(projects, sortSelect.value);
+  const sorted = sortProjects(projects, currentSort);
 
   if (sorted.length === 0) {
     projectList.innerHTML =

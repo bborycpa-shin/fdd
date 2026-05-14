@@ -31,15 +31,16 @@
       + 새 프로젝트
     </button>
 
-    <div class="flex items-center gap-1.5 mb-2">
-      <span class="text-[11px] text-slate-500">정렬</span>
-      <select id="sort-select" class="bg-white border border-slate-300 rounded-lg px-2 py-0.5">
-        <option value="created_desc">최신순</option>
-        <option value="created_asc">오래된순</option>
-        <option value="name_asc">이름순</option>
-        <option value="name_desc">이름 역순</option>
-      </select>
+    <div id="sort-bar" class="flex gap-1 overflow-x-auto whitespace-nowrap pb-1 mb-2 text-xs">
+      <button data-sort="created_desc" class="sort-chip shrink-0 px-2.5 py-1 rounded-full border">최신순</button>
+      <button data-sort="created_asc" class="sort-chip shrink-0 px-2.5 py-1 rounded-full border">오래된순</button>
+      <button data-sort="name_asc" class="sort-chip shrink-0 px-2.5 py-1 rounded-full border">이름순</button>
+      <button data-sort="name_desc" class="sort-chip shrink-0 px-2.5 py-1 rounded-full border">이름역순</button>
     </div>
+    <style>
+      #sort-bar::-webkit-scrollbar { display: none; }
+      #sort-bar { scrollbar-width: none; }
+    </style>
 
     <div id="project-list" class="space-y-1.5">
       <div class="flex items-center gap-2 px-3 py-1.5 bg-white rounded-xl border border-slate-200 animate-pulse">

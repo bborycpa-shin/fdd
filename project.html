@@ -13,7 +13,6 @@
       padding-top: env(safe-area-inset-top);
     }
     input, button, select { font-size: 16px; }
-    select { font-size: 12px; }
     body.drag-active::after {
       content: '⬆ 여기에 파일을 놓아주세요';
       position: fixed;
@@ -30,17 +29,18 @@
       z-index: 1000;
       pointer-events: none;
     }
-    #folder-tree::-webkit-scrollbar { display: none; }
-    #folder-tree { scrollbar-width: none; }
+    #folder-tree::-webkit-scrollbar,
+    #sort-bar::-webkit-scrollbar { display: none; }
+    #folder-tree, #sort-bar { scrollbar-width: none; }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-900 min-h-screen">
-  <main class="max-w-md mx-auto px-3 py-4 pb-24">
+  <main class="max-w-md mx-auto px-3 py-4 pb-28">
     <a href="/" class="inline-flex items-center text-slate-600 active:text-slate-900 mb-2 text-xs">
       ← 프로젝트 목록
     </a>
 
-    <h1 id="project-name" class="text-base font-bold mb-1 break-all leading-tight">&nbsp;</h1>
+    <h1 id="project-name" class="text-base font-bold mb-2 break-all leading-tight">&nbsp;</h1>
 
     <div id="tree-container" class="mb-3">
       <div id="folder-tree" class="flex gap-1.5 overflow-x-auto whitespace-nowrap pb-1 text-xs"></div>
@@ -63,16 +63,14 @@
 
     <input id="file-input" type="file" multiple class="hidden" />
 
-    <div class="flex items-center gap-1.5 mt-3 mb-2">
-      <span class="text-[11px] text-slate-500">정렬</span>
-      <select id="sort-select" class="bg-white border border-slate-300 rounded-lg px-2 py-0.5">
-        <option value="created_desc">최신순</option>
-        <option value="created_asc">오래된순</option>
-        <option value="name_asc">이름순</option>
-        <option value="name_desc">이름 역순</option>
-        <option value="size_desc">큰 파일순</option>
-        <option value="size_asc">작은 파일순</option>
-      </select>
+    <div id="sort-bar" class="flex gap-1 overflow-x-auto whitespace-nowrap pb-1 mt-3 mb-2 text-xs">
+      <button data-action="select-all" id="select-all-btn" class="shrink-0 px-2.5 py-1 rounded-full border bg-white text-slate-700 border-slate-300 active:bg-slate-100">☐ 전체</button>
+      <span class="w-px bg-slate-200 mx-0.5 self-stretch shrink-0"></span>
+      <button data-sort="created_desc" class="sort-chip shrink-0 px-2.5 py-1 rounded-full border">최신순</button>
+      <button data-sort="created_asc" class="sort-chip shrink-0 px-2.5 py-1 rounded-full border">오래된순</button>
+      <button data-sort="name_asc" class="sort-chip shrink-0 px-2.5 py-1 rounded-full border">이름순</button>
+      <button data-sort="name_desc" class="sort-chip shrink-0 px-2.5 py-1 rounded-full border">이름역순</button>
+      <button data-sort="type" class="sort-chip shrink-0 px-2.5 py-1 rounded-full border">형식순</button>
     </div>
 
     <p id="upload-status" class="text-xs text-blue-600 mt-2 mb-1 hidden text-center"></p>
@@ -104,13 +102,30 @@
 
   <div
     id="action-bar"
-    class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-3 py-2.5 hidden z-40 shadow-[0_-4px_12px_rgba(0,0,0,0.05)]"
-    style="padding-bottom: calc(env(safe-area-inset-bottom) + 10px);"
+    class="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-3 py-2 hidden z-40 shadow-[0_-4px_12px_rgba(0,0,0,0.05)]"
+    style="padding-bottom: calc(env(safe-area-inset-bottom) + 8px);"
   >
-    <div class="max-w-md mx-auto flex items-center gap-2">
-      <span class="text-sm flex-1"><strong id="selected-count">0</strong>개 선택됨</span>
-      <button id="cancel-select" class="text-sm text-slate-600 px-3 py-1.5">취소</button>
-      <button id="bulk-delete" class="text-sm bg-red-600 text-white rounded-lg px-3 py-1.5 font-medium active:bg-red-700">🗑 삭제</button>
+    <div class="max-w-md mx-auto">
+      <div class="flex items-center mb-1.5">
+        <span class="text-xs flex-1"><strong id="selected-count">0</strong>개 선택됨</span>
+        <button id="cancel-select" class="text-xs text-slate-500 px-2 py-1">✕ 취소</button>
+      </div>
+      <div class="grid grid-cols-3 gap-1.5">
+        <button id="bulk-download" class="text-xs bg-blue-600 text-white rounded-lg px-2 py-1.5 font-medium active:bg-blue-700">⬇ 다운로드</button>
+        <button id="bulk-move" class="text-xs bg-slate-700 text-white rounded-lg px-2 py-1.5 font-medium active:bg-slate-800">📂 이동</button>
+        <button id="bulk-delete" class="text-xs bg-red-600 text-white rounded-lg px-2 py-1.5 font-medium active:bg-red-700">🗑 삭제</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="move-modal" class="fixed inset-0 bg-black/50 z-50 hidden items-end sm:items-center justify-center p-3" style="display: none;">
+    <div class="bg-white rounded-2xl p-4 w-full max-w-md max-h-[80vh] flex flex-col">
+      <div class="flex items-center justify-between mb-2">
+        <h3 class="text-sm font-bold">어디로 이동할까요?</h3>
+        <button id="move-cancel" class="text-slate-400 text-lg leading-none px-1">✕</button>
+      </div>
+      <p class="text-[10px] text-slate-500 mb-2">아래에서 이동할 위치를 선택하세요</p>
+      <div id="move-folder-list" class="flex-1 overflow-y-auto space-y-0.5 text-xs"></div>
     </div>
   </div>
 
