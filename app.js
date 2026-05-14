@@ -106,12 +106,15 @@ function renderProjects(projects) {
       const iconHtml = p.has_image
         ? `<img src="/api/projects/${encodeURIComponent(p.id)}/image" class="block rounded-md shadow-sm shrink-0" alt="${escapeHtml(p.name)}" style="max-height:40px;max-width:64px;height:auto;width:auto;" />`
         : `<div class="w-10 h-10 rounded-md bg-gradient-to-br ${color.grad} text-white text-lg flex items-center justify-center shadow-sm shrink-0">📁</div>`;
+      const numBadge = p.display_number
+        ? `<span class="shrink-0 inline-flex items-center justify-center min-w-[22px] h-[18px] px-1 rounded bg-white/80 border border-slate-300 text-[10px] font-bold text-slate-700">#${p.display_number}</span>`
+        : "";
       return `
     <div class="flex items-center gap-2 px-3 py-2 rounded-xl border border-white/60 shadow-sm" style="background: linear-gradient(135deg, ${color.bgFrom}, ${color.bgTo})">
       <button class="project-open flex-1 flex items-center gap-2.5 min-w-0 active:opacity-60 transition text-left" data-id="${p.id}">
         ${iconHtml}
         <div class="flex-1 min-w-0 leading-tight">
-          <p class="text-sm font-bold break-all text-slate-900">${escapeHtml(p.name)}</p>
+          <div class="flex items-center gap-1.5 min-w-0">${numBadge}<p class="text-sm font-bold break-all text-slate-900 min-w-0">${escapeHtml(p.name)}</p></div>
           <p class="text-[10px] text-slate-500 mt-0.5">${formatDate(p.created_at)}</p>
         </div>
       </button>

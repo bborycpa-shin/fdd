@@ -23,12 +23,32 @@ export async function onRequestPost({ request, env }) {
     return new Response("Invalid JSON", { status: 400 });
   }
   const pw = String(body.password || "");
-  if (!pw) return new Response("password required", { status: 400 });
+  const code = String(body.access_code || "").trim();
+  if (!pw || !code) {
+    return new Response("password and access_code required", { status: 400 });
+  }
 
   const hash = await sha256Hex(pw);
   const stored = await getSetting(env, "user_password_hash");
   if (!stored || hash !== stored) {
-    return new Response("Invalid", { status: 401 });
+    return new Response("Invalid password", { status: 401 });
   }
-  return Response.json({ ok: true });
+
+  const codeRow = await env.DB.prepare(
+    "SELECT code, label, all_projects FROM access_codes WHERE code = ?"
+  )
+    .bind(code)
+    .first();
+  if (!codeRow) {
+    return new Response("Invalid access code", { status: 401 });
+  }
+
+  return Response.json({
+    ok: true,
+    access_code: {
+      code: codeRow.code,
+      label: codeRow.label || "",
+      all_projects: !!codeRow.all_projects,
+    },
+  });
 }

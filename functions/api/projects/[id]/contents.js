@@ -1,20 +1,36 @@
-export async function onRequestGet({ params, request, env }) {
+export async function onRequestGet({ params, request, env, data }) {
   const projectId = params.id;
   const url = new URL(request.url);
   const folderId = url.searchParams.get("folder") || null;
   const showAll = url.searchParams.get("all") === "1";
 
   const projectRow = await env.DB.prepare(
-    "SELECT id, name, image_r2_key, color_index FROM projects WHERE id = ?"
+    "SELECT id, name, image_r2_key, color_index, display_number FROM projects WHERE id = ?"
   )
     .bind(projectId)
     .first();
   if (!projectRow) return new Response("Project not found", { status: 404 });
+
+  const isAdmin = data && data.isAdmin;
+  if (!isAdmin) {
+    const accessCode = data && data.accessCode;
+    if (!accessCode) return new Response("Forbidden", { status: 403 });
+    if (!accessCode.all_projects) {
+      const row = await env.DB.prepare(
+        "SELECT 1 FROM access_code_projects WHERE code = ? AND project_id = ?"
+      )
+        .bind(accessCode.code, projectId)
+        .first();
+      if (!row) return new Response("Forbidden", { status: 403 });
+    }
+  }
+
   const project = {
     id: projectRow.id,
     name: projectRow.name,
     has_image: !!projectRow.image_r2_key,
     color_index: projectRow.color_index,
+    display_number: projectRow.display_number || 0,
   };
 
   const { results: allFolders } = await env.DB.prepare(

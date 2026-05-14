@@ -3,11 +3,17 @@
   const UPLOADER_KEY = "fdd_uploader_id";
   const USER_PW_LOCAL = "fdd_user_pw";
   const USER_PW_SESSION = "fdd_user_pw";
+  const ACCESS_CODE_LOCAL = "fdd_access_code";
+  const ACCESS_CODE_SESSION = "fdd_access_code";
 
   let storedAdminPw = localStorage.getItem(ADMIN_KEY) || null;
   let storedUserPw =
     localStorage.getItem(USER_PW_LOCAL) ||
     sessionStorage.getItem(USER_PW_SESSION) ||
+    null;
+  let storedAccessCode =
+    localStorage.getItem(ACCESS_CODE_LOCAL) ||
+    sessionStorage.getItem(ACCESS_CODE_SESSION) ||
     null;
   let uploaderId = localStorage.getItem(UPLOADER_KEY);
   if (!uploaderId) {
@@ -29,12 +35,13 @@
     const headers = new Headers(init.headers || {});
     if (storedAdminPw) headers.set("X-Admin-Password", storedAdminPw);
     if (storedUserPw) headers.set("X-User-Password", storedUserPw);
+    if (storedAccessCode) headers.set("X-Access-Code", storedAccessCode);
     if (uploaderId) headers.set("X-Uploader-Id", uploaderId);
     init.headers = headers;
     return origFetch(input, init);
   };
 
-  function setAdminBodyClass() {
+  function setBodyClasses() {
     document.body.classList.toggle("admin-mode", isAdmin);
     document.body.classList.toggle("locked-blocked", locked && !isAdmin);
   }
@@ -51,6 +58,7 @@
       body.needs-login > #action-bar { visibility: hidden; }
       .keypad-key { -webkit-tap-highlight-color: transparent; }
       .keypad-key:active { transform: scale(0.96); background: #e2e8f0; }
+      .input-field.active { border-color: #2563eb !important; box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15); }
     `;
     document.head.appendChild(s);
   }
@@ -95,7 +103,7 @@
     wrap.style.cssText =
       "position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:70;display:none;align-items:center;justify-content:center;padding:12px;";
     wrap.innerHTML = `
-      <div style="background:white;border-radius:16px;padding:16px;width:100%;max-width:360px;" onclick="event.stopPropagation()">
+      <div style="background:white;border-radius:16px;padding:16px;width:100%;max-width:380px;max-height:85vh;overflow-y:auto;" onclick="event.stopPropagation()">
         <div id="admin-modal-body"></div>
       </div>
     `;
@@ -106,10 +114,8 @@
   }
 
   function closeAdminModal() {
-    const wrap = document.getElementById("admin-modal");
-    if (wrap) wrap.style.display = "none";
+    document.getElementById("admin-modal").style.display = "none";
   }
-
   function openAdminModal() {
     if (!isAdmin) showAdminLoginUI();
     else showAdminPanel();
@@ -118,7 +124,6 @@
 
   function showAdminLoginUI() {
     const body = document.getElementById("admin-modal-body");
-    if (!body) return;
     body.innerHTML = `
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
         <h3 style="font-size:14px;font-weight:700;margin:0;">관리자 로그인</h3>
@@ -129,9 +134,7 @@
       <p id="admin-pw-error" style="font-size:11px;color:#dc2626;margin-bottom:8px;display:none;"></p>
       <button id="admin-pw-submit" style="width:100%;font-size:14px;padding:8px;background:#2563eb;color:white;font-weight:500;border:none;border-radius:8px;cursor:pointer;">확인</button>
     `;
-    document
-      .getElementById("admin-cancel")
-      .addEventListener("click", closeAdminModal);
+    document.getElementById("admin-cancel").addEventListener("click", closeAdminModal);
     const input = document.getElementById("admin-pw-input");
     const errEl = document.getElementById("admin-pw-error");
     const tryLogin = async () => {
@@ -153,24 +156,18 @@
         errEl.style.display = "block";
       }
     };
-    document
-      .getElementById("admin-pw-submit")
-      .addEventListener("click", tryLogin);
-    input.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") tryLogin();
-    });
+    document.getElementById("admin-pw-submit").addEventListener("click", tryLogin);
+    input.addEventListener("keydown", (e) => { if (e.key === "Enter") tryLogin(); });
     setTimeout(() => input.focus(), 50);
   }
 
   function showAdminPanel() {
     const body = document.getElementById("admin-modal-body");
-    if (!body) return;
     body.innerHTML = `
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
         <h3 style="font-size:14px;font-weight:700;margin:0;">🔓 관리자 모드</h3>
         <button id="admin-cancel" style="color:#94a3b8;font-size:18px;background:none;border:none;cursor:pointer;">✕</button>
       </div>
-
       <div style="display:flex;align-items:center;justify-content:space-between;padding:10px;background:#f1f5f9;border-radius:8px;margin-bottom:10px;">
         <div>
           <p style="font-size:12px;font-weight:600;margin:0;">전체 잠금</p>
@@ -182,54 +179,224 @@
           <span style="position:absolute;height:18px;width:18px;left:${locked ? "20px" : "2px"};top:2px;background:white;border-radius:50%;transition:0.2s;pointer-events:none;"></span>
         </label>
       </div>
-
+      <button id="admin-access-codes" style="width:100%;font-size:12px;padding:8px;background:#eff6ff;color:#1d4ed8;font-weight:600;border:1px solid #bfdbfe;border-radius:8px;margin-bottom:6px;cursor:pointer;">🔑 식별코드 관리</button>
       <button id="admin-change-user-pw" style="width:100%;font-size:12px;padding:8px;background:white;color:#0f172a;font-weight:500;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:6px;cursor:pointer;">일반 비밀번호 변경</button>
       <button id="admin-change-pw" style="width:100%;font-size:12px;padding:8px;background:white;color:#0f172a;font-weight:500;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:8px;cursor:pointer;">관리자 비밀번호 변경</button>
       <button id="admin-logout" style="width:100%;font-size:12px;padding:8px;background:white;color:#dc2626;font-weight:500;border:1px solid #cbd5e1;border-radius:8px;cursor:pointer;">관리자 로그아웃</button>
     `;
-    document
-      .getElementById("admin-cancel")
-      .addEventListener("click", closeAdminModal);
-
-    document
-      .getElementById("admin-lock-toggle")
-      .addEventListener("change", async (e) => {
-        try {
-          const res = await fetch("/api/admin/lock", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ locked: e.target.checked }),
-          });
-          if (!res.ok) throw new Error();
-          locked = e.target.checked;
-          showAdminPanel();
-        } catch {
-          e.target.checked = !e.target.checked;
-          alert("잠금 변경 실패");
-        }
-      });
-
-    document
-      .getElementById("admin-change-pw")
-      .addEventListener("click", showAdminPasswordChangeUI);
-    document
-      .getElementById("admin-change-user-pw")
-      .addEventListener("click", showUserPasswordChangeUI);
-
+    document.getElementById("admin-cancel").addEventListener("click", closeAdminModal);
+    document.getElementById("admin-lock-toggle").addEventListener("change", async (e) => {
+      try {
+        const res = await fetch("/api/admin/lock", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ locked: e.target.checked }),
+        });
+        if (!res.ok) throw new Error();
+        locked = e.target.checked;
+        showAdminPanel();
+      } catch {
+        e.target.checked = !e.target.checked;
+        alert("잠금 변경 실패");
+      }
+    });
+    document.getElementById("admin-access-codes").addEventListener("click", showAccessCodesUI);
+    document.getElementById("admin-change-pw").addEventListener("click", showAdminPasswordChangeUI);
+    document.getElementById("admin-change-user-pw").addEventListener("click", showUserPasswordChangeUI);
     document.getElementById("admin-logout").addEventListener("click", () => {
       storedAdminPw = null;
       localStorage.removeItem(ADMIN_KEY);
-      isAdmin = false;
-      setAdminBodyClass();
-      updateLockButton();
       closeAdminModal();
       location.reload();
     });
   }
 
+  async function showAccessCodesUI() {
+    const body = document.getElementById("admin-modal-body");
+    body.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <h3 style="font-size:14px;font-weight:700;margin:0;">🔑 식별코드 관리</h3>
+        <button id="admin-back" style="color:#94a3b8;font-size:13px;background:none;border:none;cursor:pointer;">‹ 뒤로</button>
+      </div>
+      <button id="ac-new" style="width:100%;font-size:12px;padding:8px;background:#2563eb;color:white;font-weight:500;border:none;border-radius:8px;margin-bottom:10px;cursor:pointer;">+ 새 식별코드 만들기</button>
+      <div id="ac-list" style="display:flex;flex-direction:column;gap:6px;"></div>
+    `;
+    document.getElementById("admin-back").addEventListener("click", showAdminPanel);
+    document.getElementById("ac-new").addEventListener("click", () => showAccessCodeForm(null));
+
+    const list = document.getElementById("ac-list");
+    list.innerHTML = '<p style="font-size:11px;color:#94a3b8;text-align:center;padding:10px;">불러오는 중...</p>';
+    try {
+      const res = await origFetch("/api/admin/access-codes", {
+        headers: { "X-Admin-Password": storedAdminPw },
+      });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      if (data.codes.length === 0) {
+        list.innerHTML = '<p style="font-size:11px;color:#94a3b8;text-align:center;padding:10px;">등록된 식별코드가 없어요</p>';
+        return;
+      }
+      list.innerHTML = data.codes.map(c => `
+        <div style="border:1px solid #e2e8f0;border-radius:8px;padding:8px;background:white;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div>
+              <code style="font-size:14px;font-weight:700;background:#f1f5f9;padding:2px 6px;border-radius:4px;">${c.code}</code>
+              ${c.label ? `<span style="font-size:11px;color:#64748b;margin-left:6px;">${escapeText(c.label)}</span>` : ''}
+            </div>
+            <div style="display:flex;gap:4px;">
+              <button class="ac-edit" data-code="${c.code}" style="font-size:11px;padding:3px 8px;background:white;color:#0f172a;border:1px solid #cbd5e1;border-radius:6px;cursor:pointer;">수정</button>
+              <button class="ac-del" data-code="${c.code}" style="font-size:11px;padding:3px 8px;background:white;color:#dc2626;border:1px solid #cbd5e1;border-radius:6px;cursor:pointer;">삭제</button>
+            </div>
+          </div>
+          <p style="font-size:10px;color:#64748b;margin:6px 0 0 0;">${c.all_projects ? '✅ 모든 프로젝트 열람' : `📁 ${c.project_ids.length}개 프로젝트`}</p>
+        </div>
+      `).join('');
+      list.querySelectorAll('.ac-edit').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const c = data.codes.find(x => x.code === btn.dataset.code);
+          showAccessCodeForm(c);
+        });
+      });
+      list.querySelectorAll('.ac-del').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          if (!confirm(`식별코드 ${btn.dataset.code}를 삭제할까요?`)) return;
+          try {
+            const r = await origFetch(`/api/admin/access-codes/${encodeURIComponent(btn.dataset.code)}`, {
+              method: 'DELETE',
+              headers: { "X-Admin-Password": storedAdminPw },
+            });
+            if (!r.ok) throw new Error();
+            showAccessCodesUI();
+          } catch {
+            alert('삭제 실패');
+          }
+        });
+      });
+    } catch {
+      list.innerHTML = '<p style="font-size:11px;color:#dc2626;text-align:center;padding:10px;">불러오기 실패</p>';
+    }
+  }
+
+  function escapeText(s) {
+    return String(s).replace(/[<>&"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
+  }
+
+  async function showAccessCodeForm(existing) {
+    const body = document.getElementById("admin-modal-body");
+    body.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <h3 style="font-size:14px;font-weight:700;margin:0;">${existing ? '식별코드 수정' : '새 식별코드'}</h3>
+        <button id="admin-back" style="color:#94a3b8;font-size:13px;background:none;border:none;cursor:pointer;">‹ 뒤로</button>
+      </div>
+      <label style="font-size:11px;color:#64748b;display:block;margin-bottom:4px;">코드 (6자리, <code>0-9 * # @ ! ~</code>만 사용)</label>
+      <input id="ac-code" type="text" maxlength="6" value="${existing ? existing.code : ''}" style="width:100%;font-size:18px;font-weight:600;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:8px;box-sizing:border-box;font-family:monospace;letter-spacing:4px;text-align:center;" />
+      <label style="font-size:11px;color:#64748b;display:block;margin-bottom:4px;">별명 (선택, 메모용)</label>
+      <input id="ac-label" type="text" maxlength="100" value="${existing ? escapeText(existing.label) : ''}" placeholder="예: 영업팀, 김부장" style="width:100%;font-size:13px;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:10px;box-sizing:border-box;" />
+
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:8px;background:#f1f5f9;border-radius:8px;">
+        <input id="ac-all" type="checkbox" ${existing && existing.all_projects ? 'checked' : ''} style="width:14px;height:14px;accent-color:#2563eb;" />
+        <label for="ac-all" style="font-size:12px;font-weight:500;flex:1;cursor:pointer;">모든 프로젝트 열람 가능</label>
+      </div>
+
+      <div id="ac-projects-wrap">
+        <label style="font-size:11px;color:#64748b;display:block;margin-bottom:4px;">열람 가능한 프로젝트 선택</label>
+        <div id="ac-projects" style="display:flex;flex-direction:column;gap:4px;max-height:200px;overflow-y:auto;border:1px solid #e2e8f0;border-radius:8px;padding:6px;margin-bottom:10px;"></div>
+      </div>
+
+      <p id="ac-error" style="font-size:11px;color:#dc2626;margin-bottom:8px;display:none;"></p>
+      <button id="ac-save" style="width:100%;font-size:14px;padding:8px;background:#2563eb;color:white;font-weight:500;border:none;border-radius:8px;cursor:pointer;">저장</button>
+    `;
+    document.getElementById("admin-back").addEventListener("click", showAccessCodesUI);
+
+    const allChk = document.getElementById("ac-all");
+    const projectsWrap = document.getElementById("ac-projects-wrap");
+    const updateWrap = () => {
+      projectsWrap.style.display = allChk.checked ? "none" : "block";
+    };
+    allChk.addEventListener("change", updateWrap);
+    updateWrap();
+
+    const projectList = document.getElementById("ac-projects");
+    projectList.innerHTML = '<p style="font-size:11px;color:#94a3b8;text-align:center;">불러오는 중...</p>';
+    let allProjects = [];
+    try {
+      const adminFetch = (u) => origFetch(u, { headers: { "X-Admin-Password": storedAdminPw } });
+      const r = await adminFetch("/api/projects");
+      if (!r.ok) throw new Error();
+      const d = await r.json();
+      allProjects = d.projects || [];
+      const selected = new Set(existing ? existing.project_ids : []);
+      if (allProjects.length === 0) {
+        projectList.innerHTML = '<p style="font-size:11px;color:#94a3b8;text-align:center;padding:6px;">아직 프로젝트가 없어요</p>';
+      } else {
+        projectList.innerHTML = allProjects.map(p => `
+          <label style="display:flex;align-items:center;gap:6px;padding:4px;cursor:pointer;font-size:12px;">
+            <input type="checkbox" class="ac-p" data-id="${p.id}" ${selected.has(p.id) ? 'checked' : ''} style="width:14px;height:14px;accent-color:#2563eb;" />
+            <span style="font-weight:600;color:#475569;">#${p.display_number || '?'}</span>
+            <span style="flex:1;">${escapeText(p.name)}</span>
+          </label>
+        `).join('');
+      }
+    } catch {
+      projectList.innerHTML = '<p style="font-size:11px;color:#dc2626;text-align:center;padding:6px;">프로젝트 목록 불러오기 실패</p>';
+    }
+
+    const errEl = document.getElementById("ac-error");
+    document.getElementById("ac-save").addEventListener("click", async () => {
+      errEl.style.display = "none";
+      const newCode = document.getElementById("ac-code").value.trim();
+      const label = document.getElementById("ac-label").value.trim();
+      const allProjectsFlag = allChk.checked;
+      const selectedIds = Array.from(projectList.querySelectorAll('.ac-p:checked')).map(i => i.dataset.id);
+
+      if (!/^[0-9*#@!~]{6}$/.test(newCode)) {
+        errEl.textContent = "코드는 6자리여야 하고, 0-9 또는 * # @ ! ~ 만 사용해야 해요";
+        errEl.style.display = "block";
+        return;
+      }
+
+      try {
+        if (existing) {
+          const r = await origFetch(`/api/admin/access-codes/${encodeURIComponent(existing.code)}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json", "X-Admin-Password": storedAdminPw },
+            body: JSON.stringify({
+              new_code: newCode,
+              label,
+              all_projects: allProjectsFlag,
+              project_ids: allProjectsFlag ? [] : selectedIds,
+            }),
+          });
+          if (!r.ok) {
+            const t = await r.text();
+            throw new Error(t || "save failed");
+          }
+        } else {
+          const r = await origFetch("/api/admin/access-codes", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "X-Admin-Password": storedAdminPw },
+            body: JSON.stringify({
+              code: newCode,
+              label,
+              all_projects: allProjectsFlag,
+              project_ids: allProjectsFlag ? [] : selectedIds,
+            }),
+          });
+          if (!r.ok) {
+            const t = await r.text();
+            throw new Error(t || "save failed");
+          }
+        }
+        showAccessCodesUI();
+      } catch (e) {
+        errEl.textContent = e.message || "저장 실패";
+        errEl.style.display = "block";
+      }
+    });
+  }
+
   function showAdminPasswordChangeUI() {
     const body = document.getElementById("admin-modal-body");
-    if (!body) return;
     body.innerHTML = `
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
         <h3 style="font-size:14px;font-weight:700;margin:0;">관리자 비밀번호 변경</h3>
@@ -246,46 +413,36 @@
     const cur = document.getElementById("admin-cur-pw");
     const next = document.getElementById("admin-new-pw");
     const err = document.getElementById("admin-cpw-err");
-    document
-      .getElementById("admin-cpw-submit")
-      .addEventListener("click", async () => {
-        err.style.display = "none";
-        if (!cur.value || !next.value) return;
-        if (next.value.length < 4) {
-          err.textContent = "새 비밀번호는 4자 이상이어야 해요";
-          err.style.display = "block";
-          return;
-        }
-        try {
-          const res = await origFetch("/api/admin/password", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "X-Admin-Password": storedAdminPw,
-            },
-            body: JSON.stringify({ current: cur.value, next: next.value }),
-          });
-          if (!res.ok) throw new Error();
-          storedAdminPw = next.value;
-          localStorage.setItem(ADMIN_KEY, next.value);
-          alert("관리자 비밀번호가 변경됐어요");
-          closeAdminModal();
-        } catch {
-          err.textContent = "현재 비밀번호가 맞지 않아요";
-          err.style.display = "block";
-        }
-      });
+    document.getElementById("admin-cpw-submit").addEventListener("click", async () => {
+      err.style.display = "none";
+      if (!cur.value || !next.value) return;
+      if (next.value.length < 4) { err.textContent = "새 비밀번호는 4자 이상이어야 해요"; err.style.display = "block"; return; }
+      try {
+        const res = await origFetch("/api/admin/password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-Admin-Password": storedAdminPw },
+          body: JSON.stringify({ current: cur.value, next: next.value }),
+        });
+        if (!res.ok) throw new Error();
+        storedAdminPw = next.value;
+        localStorage.setItem(ADMIN_KEY, next.value);
+        alert("관리자 비밀번호가 변경됐어요");
+        closeAdminModal();
+      } catch {
+        err.textContent = "현재 비밀번호가 맞지 않아요";
+        err.style.display = "block";
+      }
+    });
   }
 
   function showUserPasswordChangeUI() {
     const body = document.getElementById("admin-modal-body");
-    if (!body) return;
     body.innerHTML = `
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
         <h3 style="font-size:14px;font-weight:700;margin:0;">일반 비밀번호 변경</h3>
         <button id="admin-back" style="color:#94a3b8;font-size:13px;background:none;border:none;cursor:pointer;">‹ 뒤로</button>
       </div>
-      <p style="font-size:11px;color:#64748b;margin-bottom:8px;">일반 사용자가 로그인할 때 쓰는 비밀번호입니다.<br>키패드의 문자(<code>1-0 * # @ ! ~</code>)만 사용하세요.</p>
+      <p style="font-size:11px;color:#64748b;margin-bottom:8px;">키패드의 문자(<code>0-9 * # @ ! ~</code>)만 사용하세요.</p>
       <label style="font-size:11px;color:#64748b;display:block;margin-bottom:4px;">새 비밀번호</label>
       <input id="user-new-pw" type="text" autocomplete="off" style="width:100%;font-size:14px;padding:8px 10px;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:12px;box-sizing:border-box;" />
       <p id="user-cpw-err" style="font-size:11px;color:#dc2626;margin-bottom:8px;display:none;"></p>
@@ -294,59 +451,55 @@
     document.getElementById("admin-back").addEventListener("click", showAdminPanel);
     const next = document.getElementById("user-new-pw");
     const err = document.getElementById("user-cpw-err");
-    document
-      .getElementById("user-cpw-submit")
-      .addEventListener("click", async () => {
-        err.style.display = "none";
-        const v = next.value.trim();
-        if (!v) return;
-        if (!/^[0-9*#@!~]+$/.test(v)) {
-          err.textContent = "키패드 문자만 사용해주세요";
-          err.style.display = "block";
-          return;
-        }
-        try {
-          const res = await origFetch("/api/admin/user-password", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "X-Admin-Password": storedAdminPw,
-            },
-            body: JSON.stringify({ password: v }),
-          });
-          if (!res.ok) throw new Error();
-          alert("일반 비밀번호가 변경됐어요");
-          closeAdminModal();
-        } catch {
-          err.textContent = "변경 실패";
-          err.style.display = "block";
-        }
-      });
+    document.getElementById("user-cpw-submit").addEventListener("click", async () => {
+      err.style.display = "none";
+      const v = next.value.trim();
+      if (!v) return;
+      if (!/^[0-9*#@!~]+$/.test(v)) { err.textContent = "키패드 문자만 사용해주세요"; err.style.display = "block"; return; }
+      try {
+        const res = await origFetch("/api/admin/user-password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-Admin-Password": storedAdminPw },
+          body: JSON.stringify({ password: v }),
+        });
+        if (!res.ok) throw new Error();
+        alert("일반 비밀번호가 변경됐어요");
+        closeAdminModal();
+      } catch {
+        err.textContent = "변경 실패";
+        err.style.display = "block";
+      }
+    });
   }
 
   function injectLoginOverlay() {
     const wrap = document.createElement("div");
     wrap.id = "login-overlay";
     wrap.style.cssText =
-      "position:fixed;inset:0;background:#f8fafc;z-index:80;display:none;align-items:flex-start;justify-content:center;padding:24px 16px;overflow-y:auto;";
+      "position:fixed;inset:0;background:#f8fafc;z-index:80;display:none;align-items:flex-start;justify-content:center;padding:20px 16px;overflow-y:auto;";
     wrap.innerHTML = `
       <div style="width:100%;max-width:360px;display:flex;flex-direction:column;align-items:center;">
         <h1 style="font-size:18px;font-weight:700;margin:8px 0 2px 0;text-align:center;display:flex;align-items:baseline;gap:6px;">
           <span>📁 파일공유 시스템</span>
           <span style="font-size:10px;font-weight:400;color:#94a3b8;">by 신CPA</span>
         </h1>
-        <p style="font-size:11px;color:#dc2626;margin:8px 0 16px 0;text-align:center;line-height:1.4;">
+        <p style="font-size:11px;color:#dc2626;margin:8px 0 14px 0;text-align:center;line-height:1.4;">
           업로드한 파일 삭제는 본인만 가능합니다<br>(5분 이내 + 동일 기기).
         </p>
 
-        <div id="login-display" style="width:100%;background:white;border:1px solid #cbd5e1;border-radius:12px;padding:12px;text-align:center;font-size:24px;letter-spacing:6px;min-height:48px;margin-bottom:8px;color:#0f172a;font-weight:600;"></div>
-        <p id="login-error" style="font-size:11px;color:#dc2626;margin:0 0 12px 0;height:14px;text-align:center;"></p>
+        <label style="font-size:11px;color:#475569;width:100%;margin-bottom:4px;font-weight:500;">비밀번호</label>
+        <div id="login-pw-display" class="input-field" style="width:100%;background:white;border:1px solid #cbd5e1;border-radius:10px;padding:10px;text-align:center;font-size:20px;letter-spacing:6px;min-height:44px;margin-bottom:8px;color:#0f172a;font-weight:600;cursor:pointer;"></div>
 
-        <div id="login-keypad" style="width:100%;display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:14px;"></div>
+        <label style="font-size:11px;color:#475569;width:100%;margin-bottom:4px;font-weight:500;">식별코드 (6자리)</label>
+        <div id="login-code-display" class="input-field" style="width:100%;background:white;border:1px solid #cbd5e1;border-radius:10px;padding:10px;text-align:center;font-size:20px;letter-spacing:6px;min-height:44px;margin-bottom:8px;color:#0f172a;font-weight:600;cursor:pointer;"></div>
 
-        <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#475569;margin-bottom:10px;">
+        <p id="login-error" style="font-size:11px;color:#dc2626;margin:0 0 10px 0;min-height:14px;text-align:center;"></p>
+
+        <div id="login-keypad" style="width:100%;display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:10px;"></div>
+
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:#475569;margin-bottom:8px;">
           <input id="login-remember" type="checkbox" style="width:14px;height:14px;accent-color:#2563eb;" />
-          이 기기에서 비밀번호 기억
+          이 기기에서 비밀번호+식별코드 기억
         </label>
 
         <button id="login-submit" style="width:100%;font-size:14px;padding:10px;background:#2563eb;color:white;font-weight:500;border:none;border-radius:10px;cursor:pointer;margin-bottom:6px;">로그인</button>
@@ -355,95 +508,116 @@
     `;
     document.body.appendChild(wrap);
 
-    const display = document.getElementById("login-display");
+    const pwDisplay = document.getElementById("login-pw-display");
+    const codeDisplay = document.getElementById("login-code-display");
     const errEl = document.getElementById("login-error");
     const keypad = document.getElementById("login-keypad");
-    let inputBuffer = "";
+    let pwBuffer = "";
+    let codeBuffer = "";
+    let activeField = "pw"; // 'pw' or 'code'
 
-    function updateDisplay() {
-      display.textContent = inputBuffer
-        ? "●".repeat(inputBuffer.length)
-        : "—";
+    function updateDisplays() {
+      pwDisplay.textContent = pwBuffer ? "●".repeat(pwBuffer.length) : "—";
+      codeDisplay.textContent = codeBuffer ? "●".repeat(codeBuffer.length) : "—";
+      pwDisplay.classList.toggle("active", activeField === "pw");
+      codeDisplay.classList.toggle("active", activeField === "code");
     }
-    updateDisplay();
+    updateDisplays();
+
+    pwDisplay.addEventListener("click", () => { activeField = "pw"; updateDisplays(); });
+    codeDisplay.addEventListener("click", () => { activeField = "code"; updateDisplays(); });
 
     const keys = ["1","2","3","4","5","6","7","8","9","0","*","#","@","!","~","⌫"];
-    keys.forEach((k) => {
+    keys.forEach(k => {
       const btn = document.createElement("button");
       btn.className = "keypad-key";
-      btn.style.cssText =
-        "padding:14px 0;background:white;border:1px solid #cbd5e1;border-radius:10px;font-size:18px;font-weight:600;color:#0f172a;transition:0.05s;cursor:pointer;";
+      btn.style.cssText = "padding:12px 0;background:white;border:1px solid #cbd5e1;border-radius:10px;font-size:18px;font-weight:600;color:#0f172a;cursor:pointer;";
       btn.textContent = k;
       btn.addEventListener("click", () => {
         errEl.textContent = "";
         if (k === "⌫") {
-          inputBuffer = inputBuffer.slice(0, -1);
+          if (activeField === "pw") pwBuffer = pwBuffer.slice(0, -1);
+          else codeBuffer = codeBuffer.slice(0, -1);
         } else {
-          if (inputBuffer.length >= 20) return;
-          inputBuffer += k;
+          if (activeField === "pw") {
+            if (pwBuffer.length < 20) pwBuffer += k;
+          } else {
+            if (codeBuffer.length < 6) {
+              codeBuffer += k;
+              if (codeBuffer.length === 6 && pwBuffer.length === 0) {
+                activeField = "pw";
+              }
+            }
+          }
         }
-        updateDisplay();
+        updateDisplays();
       });
       keypad.appendChild(btn);
     });
 
     const submit = async () => {
-      if (!inputBuffer) {
-        errEl.textContent = "비밀번호를 입력하세요";
+      if (!pwBuffer || !codeBuffer) {
+        errEl.textContent = "비밀번호와 식별코드를 모두 입력하세요";
+        return;
+      }
+      if (codeBuffer.length !== 6) {
+        errEl.textContent = "식별코드는 6자리입니다";
         return;
       }
       try {
         const res = await origFetch("/api/auth/login", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ password: inputBuffer }),
+          body: JSON.stringify({ password: pwBuffer, access_code: codeBuffer }),
         });
         if (!res.ok) throw new Error();
         const remember = document.getElementById("login-remember").checked;
         if (remember) {
-          localStorage.setItem(USER_PW_LOCAL, inputBuffer);
+          localStorage.setItem(USER_PW_LOCAL, pwBuffer);
+          localStorage.setItem(ACCESS_CODE_LOCAL, codeBuffer);
           sessionStorage.removeItem(USER_PW_SESSION);
+          sessionStorage.removeItem(ACCESS_CODE_SESSION);
         } else {
-          sessionStorage.setItem(USER_PW_SESSION, inputBuffer);
+          sessionStorage.setItem(USER_PW_SESSION, pwBuffer);
+          sessionStorage.setItem(ACCESS_CODE_SESSION, codeBuffer);
           localStorage.removeItem(USER_PW_LOCAL);
+          localStorage.removeItem(ACCESS_CODE_LOCAL);
         }
-        storedUserPw = inputBuffer;
+        storedUserPw = pwBuffer;
+        storedAccessCode = codeBuffer;
         location.reload();
       } catch {
-        errEl.textContent = "비밀번호가 맞지 않아요";
-        inputBuffer = "";
-        updateDisplay();
+        errEl.textContent = "비밀번호 또는 식별코드가 맞지 않아요";
+        pwBuffer = "";
+        codeBuffer = "";
+        activeField = "pw";
+        updateDisplays();
       }
     };
 
     document.getElementById("login-submit").addEventListener("click", submit);
-    document
-      .getElementById("login-admin-mode")
-      .addEventListener("click", () => {
-        hideLoginOverlay();
-        openAdminModal();
-      });
+    document.getElementById("login-admin-mode").addEventListener("click", () => {
+      hideLoginOverlay();
+      openAdminModal();
+    });
   }
 
   function showLoginOverlay() {
     document.body.classList.add("needs-login");
-    const wrap = document.getElementById("login-overlay");
-    if (wrap) wrap.style.display = "flex";
+    document.getElementById("login-overlay").style.display = "flex";
   }
   function hideLoginOverlay() {
     document.body.classList.remove("needs-login");
-    const wrap = document.getElementById("login-overlay");
-    if (wrap) wrap.style.display = "none";
+    document.getElementById("login-overlay").style.display = "none";
   }
 
   async function refreshStatus() {
     try {
-      const res = await origFetch("/api/auth/status", {
-        headers: {
-          ...(storedAdminPw ? { "X-Admin-Password": storedAdminPw } : {}),
-          ...(storedUserPw ? { "X-User-Password": storedUserPw } : {}),
-        },
-      });
+      const headers = {};
+      if (storedAdminPw) headers["X-Admin-Password"] = storedAdminPw;
+      if (storedUserPw) headers["X-User-Password"] = storedUserPw;
+      if (storedAccessCode) headers["X-Access-Code"] = storedAccessCode;
+      const res = await origFetch("/api/auth/status", { headers });
       if (!res.ok) return;
       const data = await res.json();
       isAdmin = data.is_admin;
@@ -454,20 +628,21 @@
         storedAdminPw = null;
         localStorage.removeItem(ADMIN_KEY);
       }
-      if (!userAuthenticated && storedUserPw) {
+      if (!userAuthenticated && (storedUserPw || storedAccessCode)) {
         storedUserPw = null;
+        storedAccessCode = null;
         localStorage.removeItem(USER_PW_LOCAL);
         sessionStorage.removeItem(USER_PW_SESSION);
+        localStorage.removeItem(ACCESS_CODE_LOCAL);
+        sessionStorage.removeItem(ACCESS_CODE_SESSION);
       }
-      setAdminBodyClass();
+      setBodyClasses();
       updateLockButton();
-      if (userPwSet && !userAuthenticated) {
+      if (!isAdmin && !userAuthenticated) {
         showLoginOverlay();
       } else {
         hideLoginOverlay();
-        if (locked && !isAdmin) {
-          openAdminModal();
-        }
+        if (locked && !isAdmin) openAdminModal();
       }
     } catch {}
   }
@@ -484,8 +659,11 @@
     `;
     document.getElementById("logout-btn").addEventListener("click", () => {
       storedUserPw = null;
+      storedAccessCode = null;
       localStorage.removeItem(USER_PW_LOCAL);
       sessionStorage.removeItem(USER_PW_SESSION);
+      localStorage.removeItem(ACCESS_CODE_LOCAL);
+      sessionStorage.removeItem(ACCESS_CODE_SESSION);
       storedAdminPw = null;
       localStorage.removeItem(ADMIN_KEY);
       location.reload();
