@@ -127,9 +127,9 @@ function render(data) {
       <div class="flex items-center gap-2 px-3 py-2 bg-white rounded-xl border border-slate-200">
         <a href="/project.html?id=${encodeURIComponent(data.project.id)}&folder=${encodeURIComponent(f.id)}" class="flex-1 flex items-center gap-2 min-w-0 active:opacity-60 transition">
           <span class="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center text-base shrink-0">📁</span>
-          <span class="text-sm font-medium truncate">${escapeHtml(f.name)}</span>
+          <span class="text-sm font-medium break-all leading-snug">${escapeHtml(f.name)}</span>
         </a>
-        <button class="folder-delete text-slate-400 active:text-red-500 px-1.5 py-1 text-base shrink-0" data-id="${f.id}" data-name="${escapeHtml(f.name)}" aria-label="폴더 삭제">🗑</button>
+        <button class="folder-delete text-slate-400 active:text-red-500 px-1.5 py-1 text-base shrink-0 self-center" data-id="${f.id}" data-name="${escapeHtml(f.name)}" aria-label="폴더 삭제">🗑</button>
       </div>
     `);
   }
@@ -138,12 +138,14 @@ function render(data) {
     const icon = getFileIcon(file.name);
     items.push(`
       <div class="flex items-center gap-2 px-3 py-2 bg-white rounded-xl border border-slate-200">
-        <a href="/api/files/${encodeURIComponent(file.id)}/download" class="flex-1 flex items-center gap-2 min-w-0 active:opacity-60 transition" target="_blank" rel="noopener">
-          <span class="w-8 h-8 rounded-lg ${icon.color} text-white flex items-center justify-center text-[9px] font-bold shrink-0">${icon.label}</span>
-          <span class="text-sm font-medium truncate flex-1">${escapeHtml(file.name)}</span>
-          <span class="text-xs text-slate-400 shrink-0">${formatSize(file.size)}</span>
+        <a href="/api/files/${encodeURIComponent(file.id)}/download" class="flex-1 flex items-start gap-2 min-w-0 active:opacity-60 transition py-0.5" target="_blank" rel="noopener">
+          <span class="w-8 h-8 rounded-lg ${icon.color} text-white flex items-center justify-center text-[9px] font-bold shrink-0 mt-0.5">${icon.label}</span>
+          <div class="flex-1 min-w-0 leading-snug">
+            <p class="text-sm font-medium break-all">${escapeHtml(file.name)}</p>
+            <p class="text-xs text-slate-400 mt-0.5">${formatSize(file.size)}</p>
+          </div>
         </a>
-        <button class="file-delete text-slate-400 active:text-red-500 px-1.5 py-1 text-base shrink-0" data-id="${file.id}" data-name="${escapeHtml(file.name)}" aria-label="파일 삭제">🗑</button>
+        <button class="file-delete text-slate-400 active:text-red-500 px-1.5 py-1 text-base shrink-0 self-center" data-id="${file.id}" data-name="${escapeHtml(file.name)}" aria-label="파일 삭제">🗑</button>
       </div>
     `);
   }

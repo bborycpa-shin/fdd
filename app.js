@@ -32,11 +32,11 @@ function renderProjects(projects) {
     .map(
       (p) => `
     <div class="flex items-center gap-2 px-3 py-2 bg-white rounded-xl border border-slate-200">
-      <button class="project-open flex-1 flex items-center gap-2 min-w-0 active:opacity-60 transition" data-id="${p.id}">
+      <button class="project-open flex-1 flex items-center gap-2 min-w-0 active:opacity-60 transition text-left" data-id="${p.id}">
         <span class="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center text-base shrink-0">📂</span>
-        <span class="text-sm font-medium truncate">${escapeHtml(p.name)}</span>
+        <span class="text-sm font-medium break-all leading-snug">${escapeHtml(p.name)}</span>
       </button>
-      <button class="project-delete text-slate-400 active:text-red-500 px-1.5 py-1 text-base shrink-0" data-id="${p.id}" data-name="${escapeHtml(p.name)}" aria-label="프로젝트 삭제">🗑</button>
+      <button class="project-delete text-slate-400 active:text-red-500 px-1.5 py-1 text-base shrink-0 self-center" data-id="${p.id}" data-name="${escapeHtml(p.name)}" aria-label="프로젝트 삭제">🗑</button>
     </div>
   `
     )
