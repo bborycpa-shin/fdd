@@ -28,6 +28,7 @@
   let userAuthenticated = false;
   let userPwSet = false;
   let locked = false;
+  let currentAccessCode = null;
 
   const origFetch = window.fetch.bind(window);
   window.fetch = function (input, init) {
@@ -614,6 +615,38 @@
     document.getElementById("login-overlay").style.display = "none";
   }
 
+  function injectAuthStatusLine() {
+    const slot = document.getElementById("auth-status-slot");
+    if (!slot) return;
+    let html = "";
+    if (isAdmin) {
+      html = `🔓 관리자 (모든 권한)`;
+    } else if (userAuthenticated && currentAccessCode) {
+      const labelTxt = currentAccessCode.label
+        ? `${escapeText(currentAccessCode.label)} · `
+        : "";
+      let scope;
+      if (currentAccessCode.all_projects) {
+        scope = "모든 프로젝트 열람 가능";
+      } else {
+        const nums = (currentAccessCode.allowed_project_numbers || [])
+          .map((n) => `#${n}`)
+          .join(", ");
+        scope = nums ? `프로젝트 ${nums} 열람 가능` : "열람 가능 프로젝트 없음";
+      }
+      html = `🔑 권한 식별 : ${labelTxt}${scope}`;
+    }
+    if (!html) {
+      slot.innerHTML = "";
+      return;
+    }
+    slot.innerHTML = `
+      <div style="display:flex;justify-content:flex-end;font-size:10px;color:#64748b;margin-bottom:6px;line-height:1.3;padding:0 2px;">
+        <span style="background:rgba(255,255,255,0.7);border:1px solid #e2e8f0;border-radius:9999px;padding:2px 8px;">${html}</span>
+      </div>
+    `;
+  }
+
   async function refreshStatus() {
     try {
       const headers = {};
@@ -627,6 +660,7 @@
       userAuthenticated = data.user_authenticated;
       userPwSet = data.user_password_set;
       locked = data.locked;
+      currentAccessCode = data.access_code || null;
       if (!isAdmin && storedAdminPw) {
         storedAdminPw = null;
         localStorage.removeItem(ADMIN_KEY);
@@ -641,6 +675,7 @@
       }
       setBodyClasses();
       updateLockButton();
+      injectAuthStatusLine();
       if (!isAdmin && !userAuthenticated) {
         showLoginOverlay();
       } else {

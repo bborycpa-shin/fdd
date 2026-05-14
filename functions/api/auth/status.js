@@ -42,10 +42,25 @@ export async function onRequestGet({ request, env }) {
           .first();
         if (codeRow) {
           userAuthenticated = true;
+          let allowedNumbers = null;
+          if (!codeRow.all_projects) {
+            const { results } = await env.DB.prepare(
+              `SELECT p.display_number FROM projects p
+               INNER JOIN access_code_projects acp ON p.id = acp.project_id
+               WHERE acp.code = ?
+               ORDER BY p.display_number ASC`
+            )
+              .bind(accessCodeHeader)
+              .all();
+            allowedNumbers = (results || [])
+              .map((r) => r.display_number)
+              .filter((n) => n != null);
+          }
           accessCode = {
             code: codeRow.code,
             label: codeRow.label || "",
             all_projects: !!codeRow.all_projects,
+            allowed_project_numbers: allowedNumbers,
           };
         }
       }
