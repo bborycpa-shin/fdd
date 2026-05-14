@@ -136,15 +136,22 @@ export async function onRequest(context) {
     const adminMode = await isAdminRequest(context.request, context.env);
     const userAuth = await isUserAuthenticated(context.request, context.env);
     const userPwSet = !!(await getSetting(context.env, "user_password_hash"));
+    const lockedFlag = await isLocked(context.env);
 
-    if (userPwSet && !userAuth) {
+    const isPublicGet =
+      method === "GET" &&
+      (/^\/api\/projects\/[^/]+\/image$/.test(path) ||
+        /^\/api\/files\/[^/]+\/download$/.test(path));
+
+    if (lockedFlag && !adminMode) {
+      return new Response("Locked", { status: 403 });
+    }
+
+    if (userPwSet && !userAuth && !isPublicGet) {
       return new Response("Login required", { status: 401 });
     }
 
     if (!adminMode) {
-      if (await isLocked(context.env)) {
-        return new Response("Locked", { status: 403 });
-      }
       const publicPostPaths = new Set(["/api/files", "/api/folders"]);
       const isPublicCreate =
         method === "POST" && publicPostPaths.has(path);
