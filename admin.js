@@ -612,15 +612,18 @@
           }
         } else {
           if (activeField === "pw") {
-            if (pwBuffer.length < 20) {
+            if (pwBuffer.length < 8) {
               pwBuffer += k;
               pwRevealUntil = Date.now() + REVEAL_MS;
+              if (pwBuffer.length === 8) {
+                activeField = "code";
+              }
             }
           } else {
             if (codeBuffer.length < 6) {
               codeBuffer += k;
               codeRevealUntil = Date.now() + REVEAL_MS;
-              if (codeBuffer.length === 6 && pwBuffer.length === 0) {
+              if (codeBuffer.length === 6 && pwBuffer.length < 8) {
                 activeField = "pw";
               }
             }
