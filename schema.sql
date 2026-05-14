@@ -1,6 +1,7 @@
 CREATE TABLE IF NOT EXISTS projects (
   id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
+  image_r2_key TEXT,
   created_at INTEGER NOT NULL DEFAULT (unixepoch())
 );
 

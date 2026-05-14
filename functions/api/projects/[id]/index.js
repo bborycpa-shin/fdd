@@ -1,14 +1,22 @@
 export async function onRequestDelete({ params, env }) {
   const id = params.id;
 
+  const project = await env.DB.prepare(
+    "SELECT image_r2_key FROM projects WHERE id = ?"
+  )
+    .bind(id)
+    .first();
+
   const { results: files } = await env.DB.prepare(
     "SELECT r2_key FROM files WHERE project_id = ?"
   )
     .bind(id)
     .all();
 
-  if (files && files.length > 0) {
-    await Promise.all(files.map((f) => env.FILES.delete(f.r2_key)));
+  const r2Keys = (files || []).map((f) => f.r2_key);
+  if (project?.image_r2_key) r2Keys.push(project.image_r2_key);
+  if (r2Keys.length > 0) {
+    await Promise.all(r2Keys.map((k) => env.FILES.delete(k)));
   }
 
   await env.DB.batch([

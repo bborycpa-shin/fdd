@@ -104,12 +104,15 @@ function renderProjects(projects) {
   }
 
   projectList.innerHTML = sorted
-    .map(
-      (p) => `
+    .map((p) => {
+      const iconHtml = p.has_image
+        ? `<img src="/api/projects/${encodeURIComponent(p.id)}/image" class="w-12 h-12 rounded-xl object-cover shadow-md bg-slate-100" alt="${escapeHtml(p.name)}" />`
+        : `<div class="w-12 h-12 rounded-xl bg-gradient-to-br ${gradientFor(p.id)} text-white text-2xl flex items-center justify-center shadow-md">📁</div>`;
+      return `
     <div class="relative aspect-square bg-white rounded-2xl border border-slate-100 shadow-sm active:scale-[0.97] transition-transform">
       <button class="project-open block w-full h-full text-left p-3" data-id="${p.id}">
         <div class="flex flex-col h-full justify-between">
-          <div class="w-12 h-12 rounded-xl bg-gradient-to-br ${gradientFor(p.id)} text-white text-2xl flex items-center justify-center shadow-md">📁</div>
+          ${iconHtml}
           <div class="mt-2 min-w-0">
             <p class="text-sm font-bold break-all leading-tight line-clamp-3">${escapeHtml(p.name)}</p>
             <p class="text-[10px] text-slate-400 mt-1">${formatDate(p.created_at)}</p>
@@ -118,8 +121,8 @@ function renderProjects(projects) {
       </button>
       <button class="project-delete absolute top-1.5 right-1.5 text-slate-300 active:text-red-500 text-base px-1.5 py-1" data-id="${p.id}" data-name="${escapeHtml(p.name)}" aria-label="프로젝트 삭제">🗑</button>
     </div>
-  `
-    )
+  `;
+    })
     .join("");
 
   projectList.querySelectorAll(".project-open").forEach((btn) => {

@@ -6,6 +6,8 @@ const contentsEl = document.getElementById("contents");
 const newFolderBtn = document.getElementById("new-folder-btn");
 const uploadBtn = document.getElementById("upload-btn");
 const fileInput = document.getElementById("file-input");
+const imageInput = document.getElementById("image-input");
+const projectImageRow = document.getElementById("project-image-row");
 const uploadStatus = document.getElementById("upload-status");
 const sortBar = document.getElementById("sort-bar");
 const selectAllBtn = document.getElementById("select-all-btn");
@@ -283,12 +285,54 @@ async function load() {
   }
 }
 
+function renderProjectImage(data) {
+  if (data.project.has_image) {
+    const url = `/api/projects/${encodeURIComponent(projectId)}/image?t=${Date.now()}`;
+    projectImageRow.innerHTML = `
+      <div class="relative">
+        <button id="project-image-btn" class="block w-20 h-20 rounded-xl overflow-hidden shadow-md bg-white border border-white active:opacity-80">
+          <img src="${url}" alt="프로젝트 로고" class="w-full h-full object-cover" />
+        </button>
+        <button id="project-image-remove" class="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-white border border-slate-300 text-[10px] text-slate-500 active:text-red-500 shadow" aria-label="로고 삭제">✕</button>
+      </div>
+    `;
+    document
+      .getElementById("project-image-btn")
+      .addEventListener("click", () => imageInput.click());
+    document
+      .getElementById("project-image-remove")
+      .addEventListener("click", async () => {
+        if (!confirm("프로젝트 로고를 삭제할까요?")) return;
+        try {
+          const res = await fetch(
+            `/api/projects/${encodeURIComponent(projectId)}/image`,
+            { method: "DELETE" }
+          );
+          if (!res.ok) throw new Error();
+          await load();
+        } catch (e) {
+          alert("삭제 실패");
+        }
+      });
+  } else {
+    projectImageRow.innerHTML = `
+      <button id="project-image-btn" class="w-20 h-20 rounded-xl bg-white/70 border-2 border-dashed border-slate-300 text-slate-400 text-[10px] font-medium active:bg-white">
+        + 로고 추가
+      </button>
+    `;
+    document
+      .getElementById("project-image-btn")
+      .addEventListener("click", () => imageInput.click());
+  }
+}
+
 function render(data) {
   document.title = `${data.project.name} - 파일 공유`;
 
+  renderProjectImage(data);
   renderTree(data);
 
-  const folders = sortItems(data.folders, "folder", currentSort);
+  const folders = sortItems(data.folders, "folder", "name_asc");
   const files = sortItems(data.files, "file", currentSort);
 
   updateSelectAllChip(files);
@@ -671,6 +715,32 @@ fileInput.addEventListener("change", async () => {
   const files = Array.from(fileInput.files || []);
   fileInput.value = "";
   await uploadFiles(files);
+});
+
+imageInput.addEventListener("change", async () => {
+  const file = imageInput.files?.[0];
+  imageInput.value = "";
+  if (!file) return;
+  if (!file.type.startsWith("image/")) {
+    alert("이미지 파일만 업로드 가능해요");
+    return;
+  }
+  if (file.size > 5 * 1024 * 1024) {
+    alert("이미지는 5MB 이하만 가능해요");
+    return;
+  }
+  try {
+    const fd = new FormData();
+    fd.append("file", file);
+    const res = await fetch(
+      `/api/projects/${encodeURIComponent(projectId)}/image`,
+      { method: "POST", body: fd }
+    );
+    if (!res.ok) throw new Error();
+    await load();
+  } catch (e) {
+    alert("이미지 업로드 실패");
+  }
 });
 
 let dragCounter = 0;

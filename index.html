@@ -19,16 +19,15 @@
 </head>
 <body class="bg-slate-50 text-slate-900 min-h-screen">
   <main class="max-w-md mx-auto px-3 py-5">
-    <header class="mb-4">
+    <header class="flex items-center justify-between mb-3">
       <h1 class="text-lg font-bold">📁 파일 공유</h1>
+      <button
+        id="new-project-btn"
+        class="text-xs bg-blue-600 text-white font-medium rounded-lg px-3 py-1.5 active:bg-blue-700 transition shadow-sm"
+      >
+        + 새 프로젝트
+      </button>
     </header>
-
-    <button
-      id="new-project-btn"
-      class="w-full bg-blue-600 text-white text-sm font-medium rounded-xl py-2 mb-3 active:bg-blue-700 transition"
-    >
-      + 새 프로젝트
-    </button>
 
     <div id="sort-bar" class="flex gap-1 overflow-x-auto whitespace-nowrap pb-1 mb-2 text-xs">
       <button data-sort="created_desc" class="sort-chip shrink-0 px-2.5 py-1 rounded-full border">최신순</button>

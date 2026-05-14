@@ -3,12 +3,17 @@ export async function onRequestGet({ params, request, env }) {
   const url = new URL(request.url);
   const folderId = url.searchParams.get("folder") || null;
 
-  const project = await env.DB.prepare(
-    "SELECT id, name FROM projects WHERE id = ?"
+  const projectRow = await env.DB.prepare(
+    "SELECT id, name, image_r2_key FROM projects WHERE id = ?"
   )
     .bind(projectId)
     .first();
-  if (!project) return new Response("Project not found", { status: 404 });
+  if (!projectRow) return new Response("Project not found", { status: 404 });
+  const project = {
+    id: projectRow.id,
+    name: projectRow.name,
+    has_image: !!projectRow.image_r2_key,
+  };
 
   let currentFolder = null;
   if (folderId) {

@@ -1,8 +1,15 @@
 export async function onRequestGet({ env }) {
   const { results } = await env.DB.prepare(
-    "SELECT id, name, created_at FROM projects ORDER BY created_at DESC"
+    "SELECT id, name, created_at, image_r2_key FROM projects ORDER BY created_at DESC"
   ).all();
-  return Response.json({ projects: results });
+  return Response.json({
+    projects: results.map((p) => ({
+      id: p.id,
+      name: p.name,
+      created_at: p.created_at,
+      has_image: !!p.image_r2_key,
+    })),
+  });
 }
 
 export async function onRequestPost({ request, env }) {
