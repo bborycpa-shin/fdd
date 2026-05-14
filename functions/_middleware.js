@@ -89,12 +89,19 @@ async function ensureMigrations(env) {
     )
       .bind("user_password_hash")
       .first();
+    const defaultUserHash = await sha256Hex("1234");
+    const targetUserHash = await sha256Hex("#201017@");
     if (!userPwRow) {
-      const defaultHash = await sha256Hex("1234");
       await env.DB.prepare(
         "INSERT INTO settings (key, value) VALUES (?, ?)"
       )
-        .bind("user_password_hash", defaultHash)
+        .bind("user_password_hash", targetUserHash)
+        .run();
+    } else if (userPwRow.value === defaultUserHash) {
+      await env.DB.prepare(
+        "UPDATE settings SET value = ? WHERE key = ?"
+      )
+        .bind(targetUserHash, "user_password_hash")
         .run();
     }
 
