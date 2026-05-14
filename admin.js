@@ -31,14 +31,22 @@
   let locked = false;
   let currentAccessCode = null;
 
+  function currentAuthHeaders() {
+    const h = {};
+    if (storedAdminPw) h["X-Admin-Password"] = storedAdminPw;
+    if (storedUserPw) h["X-User-Password"] = storedUserPw;
+    if (storedAccessCode && !isAdmin) h["X-Access-Code"] = storedAccessCode;
+    if (uploaderId) h["X-Uploader-Id"] = uploaderId;
+    return h;
+  }
+  window.fddAuthHeaders = currentAuthHeaders;
+
   const origFetch = window.fetch.bind(window);
   window.fetch = function (input, init) {
     init = init || {};
     const headers = new Headers(init.headers || {});
-    if (storedAdminPw) headers.set("X-Admin-Password", storedAdminPw);
-    if (storedUserPw) headers.set("X-User-Password", storedUserPw);
-    if (storedAccessCode && !isAdmin) headers.set("X-Access-Code", storedAccessCode);
-    if (uploaderId) headers.set("X-Uploader-Id", uploaderId);
+    const auth = currentAuthHeaders();
+    Object.entries(auth).forEach(([k, v]) => headers.set(k, v));
     init.headers = headers;
     return origFetch(input, init);
   };

@@ -878,15 +878,38 @@ function showUploadOverlay(total) {
   uploadProgressCount.textContent = `0/${total}`;
   uploadProgressBar.style.width = "0%";
 }
-function updateUploadOverlay(name, current, total) {
+function updateUploadOverlay(name, currentIndex, total, fileProgress) {
   if (!uploadOverlay) return;
   uploadProgressName.textContent = name;
-  uploadProgressCount.textContent = `${current}/${total}`;
-  uploadProgressBar.style.width = `${(current / total) * 100}%`;
+  uploadProgressCount.textContent = `${Math.min(currentIndex + 1, total)}/${total}`;
+  const overall = (currentIndex + (fileProgress || 0)) / total;
+  uploadProgressBar.style.width = `${Math.min(overall * 100, 100)}%`;
 }
 function hideUploadOverlay() {
   if (!uploadOverlay) return;
   uploadOverlay.style.display = "none";
+}
+
+function uploadFileWithProgress(fd, onProgress) {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.upload.addEventListener("progress", (e) => {
+      if (e.lengthComputable && onProgress) {
+        onProgress(e.loaded / e.total);
+      }
+    });
+    xhr.addEventListener("load", () => {
+      if (xhr.status >= 200 && xhr.status < 300) resolve();
+      else reject(new Error("upload failed: " + xhr.status));
+    });
+    xhr.addEventListener("error", () => reject(new Error("network error")));
+    xhr.addEventListener("abort", () => reject(new Error("aborted")));
+    xhr.open("POST", "/api/files");
+    const headers =
+      typeof window.fddAuthHeaders === "function" ? window.fddAuthHeaders() : {};
+    Object.entries(headers).forEach(([k, v]) => xhr.setRequestHeader(k, v));
+    xhr.send(fd);
+  });
 }
 
 async function uploadFiles(files) {
@@ -911,19 +934,20 @@ async function uploadFiles(files) {
   let fail = 0;
 
   for (let i = 0; i < files.length; i++) {
-    updateUploadOverlay(files[i].name, i, files.length);
+    updateUploadOverlay(files[i].name, i, files.length, 0);
     const fd = new FormData();
     fd.append("project_id", projectId);
     if (folderId) fd.append("folder_id", folderId);
     fd.append("file", files[i]);
     try {
-      const res = await fetch("/api/files", { method: "POST", body: fd });
-      if (!res.ok) throw new Error();
+      await uploadFileWithProgress(fd, (frac) => {
+        updateUploadOverlay(files[i].name, i, files.length, frac);
+      });
       success++;
     } catch (e) {
       fail++;
     }
-    updateUploadOverlay(files[i].name, i + 1, files.length);
+    updateUploadOverlay(files[i].name, i + 1, files.length, 0);
   }
 
   hideUploadOverlay();
