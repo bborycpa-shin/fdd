@@ -115,8 +115,8 @@ function renderProjects(projects) {
           <p class="text-[10px] text-slate-500 mt-0.5">${formatDate(p.created_at)}</p>
         </div>
       </button>
-      <button class="project-edit text-slate-400 active:text-blue-600 px-1 py-1 text-sm shrink-0 self-center" data-id="${p.id}" aria-label="프로젝트 수정">✏</button>
-      <button class="project-delete text-slate-400 active:text-red-500 px-1 py-1 text-base shrink-0 self-center" data-id="${p.id}" data-name="${escapeHtml(p.name)}" aria-label="프로젝트 삭제">🗑</button>
+      <button class="project-edit admin-only text-slate-400 active:text-blue-600 px-1 py-1 text-sm shrink-0 self-center" data-id="${p.id}" aria-label="프로젝트 수정">✏</button>
+      <button class="project-delete admin-only text-slate-400 active:text-red-500 px-1 py-1 text-base shrink-0 self-center" data-id="${p.id}" data-name="${escapeHtml(p.name)}" aria-label="프로젝트 삭제">🗑</button>
     </div>
   `;
     })

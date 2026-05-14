@@ -372,22 +372,25 @@ async function load() {
 }
 
 function renderProjectImage(data) {
+  const isAdmin =
+    window.fddAdmin && typeof window.fddAdmin.isAdmin === "function"
+      ? window.fddAdmin.isAdmin()
+      : false;
   if (data.project.has_image) {
     const url = `/api/projects/${encodeURIComponent(projectId)}/image?t=${Date.now()}`;
     projectImageRow.innerHTML = `
       <div class="relative inline-flex items-center">
-        <button id="project-image-btn" class="block bg-white rounded-md shadow-sm border border-white p-0.5 active:opacity-80" title="클릭/끌기/Ctrl+V로 변경">
+        <div id="project-image-btn" class="block bg-white rounded-md shadow-sm border border-white p-0.5 ${isAdmin ? "cursor-pointer active:opacity-80" : ""}" title="${isAdmin ? "클릭/끌기/Ctrl+V로 변경" : ""}">
           <img src="${url}" alt="프로젝트 로고" class="block object-contain" style="max-height: 32px; max-width: 80px; height: auto; width: auto;" />
-        </button>
-        <button id="project-image-remove" class="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-white border border-slate-300 text-[8px] text-slate-500 active:text-red-500 shadow leading-none flex items-center justify-center" aria-label="로고 삭제">✕</button>
+        </div>
+        <button id="project-image-remove" class="admin-only absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-white border border-slate-300 text-[8px] text-slate-500 active:text-red-500 shadow leading-none flex items-center justify-center" aria-label="로고 삭제">✕</button>
       </div>
     `;
-    document
-      .getElementById("project-image-btn")
-      .addEventListener("click", () => imageInput.click());
-    document
-      .getElementById("project-image-remove")
-      .addEventListener("click", async () => {
+    const btn = document.getElementById("project-image-btn");
+    if (isAdmin) btn.addEventListener("click", () => imageInput.click());
+    const removeBtn = document.getElementById("project-image-remove");
+    if (removeBtn) {
+      removeBtn.addEventListener("click", async () => {
         if (!confirm("프로젝트 로고를 삭제할까요?")) return;
         try {
           const res = await fetch(
@@ -400,15 +403,18 @@ function renderProjectImage(data) {
           alert("삭제 실패");
         }
       });
-  } else {
+    }
+  } else if (isAdmin) {
     projectImageRow.innerHTML = `
-      <button id="project-image-btn" class="text-[10px] px-2 h-7 rounded-lg border border-dashed border-slate-300 bg-white/70 text-slate-400 font-medium active:bg-white" title="클릭, 끌어놓기, 또는 Ctrl+V로 로고 추가">
+      <button id="project-image-btn" class="admin-only text-[10px] px-2 h-7 rounded-lg border border-dashed border-slate-300 bg-white/70 text-slate-400 font-medium active:bg-white" title="클릭, 끌어놓기, 또는 Ctrl+V로 로고 추가">
         + 로고
       </button>
     `;
     document
       .getElementById("project-image-btn")
       .addEventListener("click", () => imageInput.click());
+  } else {
+    projectImageRow.innerHTML = "";
   }
 }
 
@@ -468,8 +474,8 @@ function render(data) {
             <p class="text-[9px] text-amber-700/70 mt-0.5">${formatDate(f.created_at)}</p>
           </div>
         </a>
-        <button class="folder-rename text-amber-600/70 active:text-blue-600 px-1 py-0.5 text-sm shrink-0 self-center" data-id="${f.id}" data-name="${escapeHtml(f.name)}" aria-label="폴더 이름 바꾸기">✏</button>
-        <button class="folder-delete text-amber-600/70 active:text-red-500 px-1 py-0.5 text-sm shrink-0 self-center" data-id="${f.id}" data-name="${escapeHtml(f.name)}" aria-label="폴더 삭제">🗑</button>
+        <button class="folder-rename admin-only text-amber-600/70 active:text-blue-600 px-1 py-0.5 text-sm shrink-0 self-center" data-id="${f.id}" data-name="${escapeHtml(f.name)}" aria-label="폴더 이름 바꾸기">✏</button>
+        <button class="folder-delete admin-only text-amber-600/70 active:text-red-500 px-1 py-0.5 text-sm shrink-0 self-center" data-id="${f.id}" data-name="${escapeHtml(f.name)}" aria-label="폴더 삭제">🗑</button>
       </div>
     `);
   }
@@ -494,8 +500,8 @@ function render(data) {
           </div>
         </div>
         <button class="file-download text-slate-400 active:text-blue-600 px-1 py-0.5 text-sm shrink-0 self-center" data-id="${file.id}" aria-label="다운로드">⬇</button>
-        <button class="file-rename text-slate-400 active:text-blue-600 px-1 py-0.5 text-sm shrink-0 self-center" data-id="${file.id}" data-name="${escapeHtml(file.name)}" aria-label="이름 바꾸기">✏</button>
-        <button class="file-delete text-slate-400 active:text-red-500 px-1 py-0.5 text-sm shrink-0 self-center" data-id="${file.id}" data-name="${escapeHtml(file.name)}" aria-label="파일 삭제">🗑</button>
+        <button class="file-rename admin-only text-slate-400 active:text-blue-600 px-1 py-0.5 text-sm shrink-0 self-center" data-id="${file.id}" data-name="${escapeHtml(file.name)}" aria-label="이름 바꾸기">✏</button>
+        <button class="file-delete admin-only text-slate-400 active:text-red-500 px-1 py-0.5 text-sm shrink-0 self-center" data-id="${file.id}" data-name="${escapeHtml(file.name)}" aria-label="파일 삭제">🗑</button>
       </div>
     `);
   }

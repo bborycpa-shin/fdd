@@ -40,11 +40,11 @@
   </style>
 </head>
 <body class="text-slate-900">
-  <main class="max-w-md mx-auto px-3 py-3" style="padding-bottom: calc(22vh + 12px);">
+  <main class="max-w-md mx-auto pl-3 pr-12 py-3" style="padding-bottom: calc(22vh + 12px);">
     <div class="flex items-center gap-1.5 mb-3">
       <a href="/" class="shrink-0 inline-flex items-center gap-0.5 text-[11px] text-slate-700 bg-white border border-slate-200 rounded-full pl-1.5 pr-2.5 py-1 active:bg-slate-100 shadow-sm font-medium">
         <span class="text-sm leading-none">‹</span>
-        <span>목록</span>
+        <span>홈으로</span>
       </a>
       <div id="project-image-row" class="flex-1 flex justify-center items-center min-w-0"></div>
       <button id="new-folder-btn" class="shrink-0 text-[11px] px-2 py-1 rounded-lg border border-slate-300 bg-white active:bg-slate-100 font-medium shadow-sm">
@@ -119,10 +119,10 @@
         <span class="text-xs flex-1"><strong id="selected-count">0</strong>개 선택됨</span>
         <button id="cancel-select" class="text-xs text-slate-500 px-2 py-1">✕ 취소</button>
       </div>
-      <div class="grid grid-cols-3 gap-1.5">
-        <button id="bulk-download" class="text-xs bg-blue-600 text-white rounded-lg px-2 py-1.5 font-medium active:bg-blue-700">⬇ 다운로드</button>
-        <button id="bulk-move" class="text-xs bg-slate-700 text-white rounded-lg px-2 py-1.5 font-medium active:bg-slate-800">📂 이동</button>
-        <button id="bulk-delete" class="text-xs bg-red-600 text-white rounded-lg px-2 py-1.5 font-medium active:bg-red-700">🗑 삭제</button>
+      <div class="flex gap-1.5">
+        <button id="bulk-download" class="flex-1 text-xs bg-blue-600 text-white rounded-lg px-2 py-1.5 font-medium active:bg-blue-700">⬇ 다운로드</button>
+        <button id="bulk-move" class="admin-only flex-1 text-xs bg-slate-700 text-white rounded-lg px-2 py-1.5 font-medium active:bg-slate-800">📂 이동</button>
+        <button id="bulk-delete" class="admin-only flex-1 text-xs bg-red-600 text-white rounded-lg px-2 py-1.5 font-medium active:bg-red-700">🗑 삭제</button>
       </div>
     </div>
   </div>
@@ -138,6 +138,7 @@
     </div>
   </div>
 
+  <script src="/admin.js"></script>
   <script src="/project.js"></script>
 </body>
 </html>
