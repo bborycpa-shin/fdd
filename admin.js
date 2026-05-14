@@ -273,9 +273,10 @@
         btn.addEventListener('click', async () => {
           if (!confirm(`식별번호 ${btn.dataset.code}를 삭제할까요?`)) return;
           try {
-            const r = await origFetch(`/api/admin/access-codes/${encodeURIComponent(btn.dataset.code)}`, {
+            const r = await origFetch(`/api/admin/access-codes`, {
               method: 'DELETE',
-              headers: { "X-Admin-Password": storedAdminPw },
+              headers: { "Content-Type": "application/json", "X-Admin-Password": storedAdminPw },
+              body: JSON.stringify({ code: btn.dataset.code }),
             });
             if (!r.ok) throw new Error();
             showAccessCodesUI();
@@ -369,10 +370,11 @@
 
       try {
         if (existing) {
-          const r = await origFetch(`/api/admin/access-codes/${encodeURIComponent(existing.code)}`, {
+          const r = await origFetch("/api/admin/access-codes", {
             method: "PATCH",
             headers: { "Content-Type": "application/json", "X-Admin-Password": storedAdminPw },
             body: JSON.stringify({
+              old_code: existing.code,
               new_code: newCode,
               label,
               all_projects: allProjectsFlag,

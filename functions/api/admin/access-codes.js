@@ -91,3 +91,131 @@ export async function onRequestPost({ request, env }) {
 
   return Response.json({ ok: true, code });
 }
+
+export async function onRequestPatch({ request, env }) {
+  if (!(await requireAdmin(request, env))) {
+    return new Response("Admin required", { status: 403 });
+  }
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return new Response("Invalid JSON", { status: 400 });
+  }
+
+  const oldCode = String(body.old_code || "").trim();
+  if (!oldCode) return new Response("old_code required", { status: 400 });
+
+  const existing = await env.DB.prepare(
+    "SELECT code, all_projects FROM access_codes WHERE code = ?"
+  )
+    .bind(oldCode)
+    .first();
+  if (!existing) return new Response("Not found", { status: 404 });
+
+  let newCode = oldCode;
+  if (body.new_code !== undefined) {
+    const candidate = String(body.new_code).trim();
+    if (!VALID_CHARS.test(candidate)) {
+      return new Response("new_code must be 6 chars from 0-9*#@!~", {
+        status: 400,
+      });
+    }
+    if (candidate !== oldCode) {
+      const clash = await env.DB.prepare(
+        "SELECT 1 FROM access_codes WHERE code = ?"
+      )
+        .bind(candidate)
+        .first();
+      if (clash) return new Response("code already exists", { status: 409 });
+      newCode = candidate;
+    }
+  }
+
+  let allProjects = existing.all_projects;
+  if (body.all_projects !== undefined) {
+    allProjects = body.all_projects ? 1 : 0;
+  }
+
+  let label;
+  let updateLabel = false;
+  if (body.label !== undefined) {
+    label = String(body.label || "").trim().slice(0, 100) || null;
+    updateLabel = true;
+  }
+
+  let projectIds = null;
+  if (Array.isArray(body.project_ids)) {
+    projectIds = body.project_ids.map(String);
+  }
+
+  if (newCode !== oldCode) {
+    await env.DB.batch([
+      env.DB.prepare(
+        "UPDATE access_codes SET code = ? WHERE code = ?"
+      ).bind(newCode, oldCode),
+      env.DB.prepare(
+        "UPDATE access_code_projects SET code = ? WHERE code = ?"
+      ).bind(newCode, oldCode),
+    ]);
+  }
+
+  const sets = ["all_projects = ?"];
+  const vals = [allProjects];
+  if (updateLabel) {
+    sets.push("label = ?");
+    vals.push(label);
+  }
+  vals.push(newCode);
+  await env.DB.prepare(
+    `UPDATE access_codes SET ${sets.join(", ")} WHERE code = ?`
+  )
+    .bind(...vals)
+    .run();
+
+  if (projectIds !== null) {
+    await env.DB.prepare(
+      "DELETE FROM access_code_projects WHERE code = ?"
+    )
+      .bind(newCode)
+      .run();
+    if (!allProjects && projectIds.length > 0) {
+      const stmts = projectIds.map((pid) =>
+        env.DB.prepare(
+          "INSERT OR IGNORE INTO access_code_projects (code, project_id) VALUES (?, ?)"
+        ).bind(newCode, pid)
+      );
+      await env.DB.batch(stmts);
+    }
+  } else if (allProjects) {
+    await env.DB.prepare(
+      "DELETE FROM access_code_projects WHERE code = ?"
+    )
+      .bind(newCode)
+      .run();
+  }
+
+  return Response.json({ ok: true, code: newCode });
+}
+
+export async function onRequestDelete({ request, env }) {
+  if (!(await requireAdmin(request, env))) {
+    return new Response("Admin required", { status: 403 });
+  }
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return new Response("Invalid JSON", { status: 400 });
+  }
+  const code = String(body.code || "").trim();
+  if (!code) return new Response("code required", { status: 400 });
+
+  await env.DB.batch([
+    env.DB.prepare(
+      "DELETE FROM access_code_projects WHERE code = ?"
+    ).bind(code),
+    env.DB.prepare("DELETE FROM access_codes WHERE code = ?").bind(code),
+  ]);
+  return new Response(null, { status: 204 });
+}
