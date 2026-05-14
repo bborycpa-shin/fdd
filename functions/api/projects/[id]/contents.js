@@ -5,7 +5,7 @@ export async function onRequestGet({ params, request, env }) {
   const showAll = url.searchParams.get("all") === "1";
 
   const projectRow = await env.DB.prepare(
-    "SELECT id, name, image_r2_key FROM projects WHERE id = ?"
+    "SELECT id, name, image_r2_key, color_index FROM projects WHERE id = ?"
   )
     .bind(projectId)
     .first();
@@ -14,6 +14,7 @@ export async function onRequestGet({ params, request, env }) {
     id: projectRow.id,
     name: projectRow.name,
     has_image: !!projectRow.image_r2_key,
+    color_index: projectRow.color_index,
   };
 
   const { results: allFolders } = await env.DB.prepare(

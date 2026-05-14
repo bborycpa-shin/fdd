@@ -1,7 +1,16 @@
 const projectList = document.getElementById("project-list");
 const newProjectBtn = document.getElementById("new-project-btn");
 
+const editModal = document.getElementById("edit-modal");
+const editName = document.getElementById("edit-name");
+const editColors = document.getElementById("edit-colors");
+const editSaveBtn = document.getElementById("edit-save");
+const editCancelXBtn = document.getElementById("edit-cancel-x");
+const editCancelBtn = document.getElementById("edit-cancel-btn");
+
 let cachedProjects = null;
+let editingProject = null;
+let editingColorIndex = null;
 
 const PROJECT_COLORS = [
   { bgFrom: "#eff6ff", bgTo: "#e0e7ff", grad: "from-blue-500 to-indigo-600" },
@@ -14,11 +23,22 @@ const PROJECT_COLORS = [
   { bgFrom: "#f1f5f9", bgTo: "#e2e8f0", grad: "from-slate-600 to-slate-800" },
 ];
 
-function projectColor(id) {
+function projectColorByHash(id) {
   const s = String(id);
   let hash = 0;
   for (let i = 0; i < s.length; i++) hash = (hash * 31 + s.charCodeAt(i)) >>> 0;
   return PROJECT_COLORS[hash % PROJECT_COLORS.length];
+}
+
+function projectColor(project) {
+  if (
+    project &&
+    project.color_index !== null &&
+    project.color_index !== undefined
+  ) {
+    return PROJECT_COLORS[project.color_index];
+  }
+  return projectColorByHash(project.id);
 }
 
 function escapeHtml(str) {
@@ -66,7 +86,7 @@ function renderProjects(projects) {
 
   projectList.innerHTML = sorted
     .map((p) => {
-      const color = projectColor(p.id);
+      const color = projectColor(p);
       const iconHtml = p.has_image
         ? `<img src="/api/projects/${encodeURIComponent(p.id)}/image" class="block rounded-md shadow-sm shrink-0" alt="${escapeHtml(p.name)}" style="max-height:40px;max-width:64px;height:auto;width:auto;" />`
         : `<div class="w-10 h-10 rounded-md bg-gradient-to-br ${color.grad} text-white text-lg flex items-center justify-center shadow-sm shrink-0">📁</div>`;
@@ -79,7 +99,7 @@ function renderProjects(projects) {
           <p class="text-[10px] text-slate-500 mt-0.5">${formatDate(p.created_at)}</p>
         </div>
       </button>
-      <button class="project-rename text-slate-400 active:text-blue-600 px-1 py-1 text-sm shrink-0 self-center" data-id="${p.id}" data-name="${escapeHtml(p.name)}" aria-label="이름 바꾸기">✏</button>
+      <button class="project-edit text-slate-400 active:text-blue-600 px-1 py-1 text-sm shrink-0 self-center" data-id="${p.id}" aria-label="프로젝트 수정">✏</button>
       <button class="project-delete text-slate-400 active:text-red-500 px-1 py-1 text-base shrink-0 self-center" data-id="${p.id}" data-name="${escapeHtml(p.name)}" aria-label="프로젝트 삭제">🗑</button>
     </div>
   `;
@@ -93,29 +113,18 @@ function renderProjects(projects) {
     });
   });
 
-  projectList.querySelectorAll(".project-rename").forEach((btn) => {
-    btn.addEventListener("click", async (e) => {
+  projectList.querySelectorAll(".project-edit").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
       e.stopPropagation();
       const id = btn.dataset.id;
-      const current = btn.dataset.name;
-      const newName = prompt("새 프로젝트 이름을 입력해주세요", current);
-      if (!newName || !newName.trim() || newName.trim() === current) return;
-      try {
-        const res = await fetch(`/api/projects/${id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: newName.trim() }),
-        });
-        if (!res.ok) throw new Error();
-        await loadProjects();
-      } catch (e) {
-        alert("이름 변경 실패");
-      }
+      const p = cachedProjects.find((x) => x.id === id);
+      if (p) openEditModal(p);
     });
   });
 
   projectList.querySelectorAll(".project-delete").forEach((btn) => {
-    btn.addEventListener("click", async () => {
+    btn.addEventListener("click", async (e) => {
+      e.stopPropagation();
       const id = btn.dataset.id;
       const name = btn.dataset.name;
       if (
@@ -134,6 +143,74 @@ function renderProjects(projects) {
     });
   });
 }
+
+function openEditModal(project) {
+  editingProject = project;
+  editingColorIndex =
+    project.color_index === null || project.color_index === undefined
+      ? null
+      : project.color_index;
+  editName.value = project.name;
+  renderColorOptions();
+  editModal.style.display = "flex";
+}
+
+function closeEditModal() {
+  editModal.style.display = "none";
+  editingProject = null;
+}
+
+function renderColorOptions() {
+  const cells = [];
+  const autoSelected = editingColorIndex === null;
+  cells.push(`
+    <button data-idx="auto" class="color-option h-10 rounded-lg border-2 transition text-[10px] font-medium bg-white text-slate-500 flex items-center justify-center" style="border-color: ${autoSelected ? "#2563eb" : "transparent"}">
+      자동
+    </button>
+  `);
+  PROJECT_COLORS.forEach((c, i) => {
+    const selected = editingColorIndex === i;
+    cells.push(`
+      <button data-idx="${i}" class="color-option h-10 rounded-lg border-2 transition" style="background: linear-gradient(135deg, ${c.bgFrom}, ${c.bgTo}); border-color: ${selected ? "#2563eb" : "transparent"}"></button>
+    `);
+  });
+  editColors.innerHTML = cells.join("");
+  editColors.querySelectorAll(".color-option").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const raw = btn.dataset.idx;
+      editingColorIndex = raw === "auto" ? null : parseInt(raw, 10);
+      renderColorOptions();
+    });
+  });
+}
+
+editSaveBtn.addEventListener("click", async () => {
+  if (!editingProject) return;
+  const newName = editName.value.trim();
+  if (!newName) {
+    alert("이름을 입력해주세요");
+    return;
+  }
+  try {
+    const body = { name: newName, color_index: editingColorIndex };
+    const res = await fetch(`/api/projects/${editingProject.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error();
+    closeEditModal();
+    await loadProjects();
+  } catch (e) {
+    alert("수정 실패");
+  }
+});
+
+editCancelXBtn.addEventListener("click", closeEditModal);
+editCancelBtn.addEventListener("click", closeEditModal);
+editModal.addEventListener("click", (e) => {
+  if (e.target === editModal) closeEditModal();
+});
 
 newProjectBtn.addEventListener("click", async () => {
   const name = prompt("새 프로젝트 이름을 입력해주세요");

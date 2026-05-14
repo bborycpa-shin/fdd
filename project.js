@@ -39,19 +39,32 @@ const PROJECT_COLORS = [
   { bgFrom: "#f1f5f9", bgTo: "#e2e8f0", grad: "from-slate-600 to-slate-800" },
 ];
 
-function projectColor(id) {
+function projectColorByHash(id) {
   const s = String(id);
   let hash = 0;
   for (let i = 0; i < s.length; i++) hash = (hash * 31 + s.charCodeAt(i)) >>> 0;
   return PROJECT_COLORS[hash % PROJECT_COLORS.length];
 }
 
-(function applyProjectBackground() {
-  const c = projectColor(projectId);
+function projectColor(project) {
+  if (
+    project &&
+    project.color_index !== null &&
+    project.color_index !== undefined
+  ) {
+    return PROJECT_COLORS[project.color_index];
+  }
+  return projectColorByHash(project && project.id ? project.id : project);
+}
+
+function applyBackground(project) {
+  const c = projectColor(project);
   document.body.style.background = `linear-gradient(135deg, ${c.bgFrom}, ${c.bgTo})`;
   document.body.style.backgroundAttachment = "fixed";
   document.body.style.minHeight = "100vh";
-})();
+}
+
+applyBackground({ id: projectId });
 
 if (showAll) {
   newFolderBtn.disabled = true;
@@ -216,7 +229,7 @@ function renderTree(data) {
   `;
   const allFilesChip = `
     <a href="/project.html?id=${pid}&all=1" class="inline-flex items-center px-2.5 py-0.5 rounded-full border transition ${showAll ? "bg-blue-600 text-white border-blue-600 font-semibold" : "bg-white text-slate-700 border-slate-300 active:bg-slate-100"}">
-      📋 모든 파일
+      📋 모든 파일 보기
     </a>
   `;
   const headerChips = `<div class="flex flex-wrap gap-1 items-center">${projectChip}${allFilesChip}</div>`;
@@ -348,6 +361,7 @@ function renderProjectImage(data) {
 function render(data) {
   document.title = `${data.project.name} - 파일 공유`;
 
+  applyBackground(data.project);
   renderProjectImage(data);
   renderTree(data);
 

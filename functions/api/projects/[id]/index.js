@@ -8,19 +8,41 @@ export async function onRequestPatch({ params, request, env }) {
     return new Response("Invalid JSON", { status: 400 });
   }
 
-  const newName = String(body.name || "").trim();
-  if (!newName) return new Response("name required", { status: 400 });
-  if (newName.length > 100)
-    return new Response("name too long", { status: 400 });
-
   const project = await env.DB.prepare("SELECT id FROM projects WHERE id = ?")
     .bind(id)
     .first();
   if (!project) return new Response("Project not found", { status: 404 });
 
-  await env.DB.prepare("UPDATE projects SET name = ? WHERE id = ?")
-    .bind(newName, id)
-    .run();
+  let didSomething = false;
+
+  if (body.name !== undefined) {
+    const newName = String(body.name || "").trim();
+    if (!newName) return new Response("name required", { status: 400 });
+    if (newName.length > 100)
+      return new Response("name too long", { status: 400 });
+    await env.DB.prepare("UPDATE projects SET name = ? WHERE id = ?")
+      .bind(newName, id)
+      .run();
+    didSomething = true;
+  }
+
+  if (body.color_index !== undefined) {
+    let colorIdx;
+    if (body.color_index === null || body.color_index === "") {
+      colorIdx = null;
+    } else {
+      colorIdx = parseInt(body.color_index, 10);
+      if (Number.isNaN(colorIdx) || colorIdx < 0 || colorIdx > 7) {
+        return new Response("invalid color_index", { status: 400 });
+      }
+    }
+    await env.DB.prepare("UPDATE projects SET color_index = ? WHERE id = ?")
+      .bind(colorIdx, id)
+      .run();
+    didSomething = true;
+  }
+
+  if (!didSomething) return new Response("nothing to update", { status: 400 });
 
   return new Response(null, { status: 204 });
 }
