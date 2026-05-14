@@ -477,9 +477,9 @@
     const wrap = document.createElement("div");
     wrap.id = "login-overlay";
     wrap.style.cssText =
-      "position:fixed;inset:0;background:#f8fafc;z-index:80;display:none;align-items:flex-start;justify-content:center;padding:12px;overflow-y:auto;";
+      "position:fixed;inset:0;background:#f8fafc;z-index:80;display:none;align-items:flex-start;justify-content:center;padding:18px;overflow-y:auto;";
     wrap.innerHTML = `
-      <div style="width:100%;max-width:340px;display:flex;flex-direction:column;align-items:center;">
+      <div style="width:100%;max-width:320px;display:flex;flex-direction:column;align-items:center;">
         <h1 style="font-size:16px;font-weight:700;margin:4px 0 6px 0;text-align:center;display:flex;align-items:baseline;gap:5px;">
           <span>📁 파일공유 시스템</span>
           <span style="font-size:9px;font-weight:400;color:#94a3b8;">by 신CPA</span>
@@ -519,13 +519,38 @@
     let pwBuffer = "";
     let codeBuffer = "";
     let activeField = "pw"; // 'pw' or 'code'
+    let pwRevealUntil = 0;
+    let codeRevealUntil = 0;
+    let revealTimer = null;
+    const REVEAL_MS = 800;
+
+    function renderMasked(buf, revealUntil) {
+      if (!buf) return "—";
+      const showLast = Date.now() < revealUntil;
+      if (!showLast) return "●".repeat(buf.length);
+      return "●".repeat(buf.length - 1) + buf[buf.length - 1];
+    }
 
     function updateDisplays() {
-      pwDisplay.textContent = pwBuffer ? "●".repeat(pwBuffer.length) : "—";
-      codeDisplay.textContent = codeBuffer ? "●".repeat(codeBuffer.length) : "—";
+      pwDisplay.textContent = renderMasked(pwBuffer, pwRevealUntil);
+      codeDisplay.textContent = renderMasked(codeBuffer, codeRevealUntil);
       pwDisplay.classList.toggle("active", activeField === "pw");
       codeDisplay.classList.toggle("active", activeField === "code");
     }
+
+    function scheduleReveal() {
+      if (revealTimer) clearTimeout(revealTimer);
+      const earliest = Math.min(
+        pwRevealUntil || Infinity,
+        codeRevealUntil || Infinity
+      );
+      const now = Date.now();
+      const latest = Math.max(pwRevealUntil, codeRevealUntil);
+      if (latest > now) {
+        revealTimer = setTimeout(updateDisplays, latest - now + 30);
+      }
+    }
+
     updateDisplays();
 
     pwDisplay.addEventListener("click", () => { activeField = "pw"; updateDisplays(); });
@@ -540,14 +565,23 @@
       btn.addEventListener("click", () => {
         errEl.textContent = "";
         if (k === "⌫") {
-          if (activeField === "pw") pwBuffer = pwBuffer.slice(0, -1);
-          else codeBuffer = codeBuffer.slice(0, -1);
+          if (activeField === "pw") {
+            pwBuffer = pwBuffer.slice(0, -1);
+            pwRevealUntil = 0;
+          } else {
+            codeBuffer = codeBuffer.slice(0, -1);
+            codeRevealUntil = 0;
+          }
         } else {
           if (activeField === "pw") {
-            if (pwBuffer.length < 20) pwBuffer += k;
+            if (pwBuffer.length < 20) {
+              pwBuffer += k;
+              pwRevealUntil = Date.now() + REVEAL_MS;
+            }
           } else {
             if (codeBuffer.length < 6) {
               codeBuffer += k;
+              codeRevealUntil = Date.now() + REVEAL_MS;
               if (codeBuffer.length === 6 && pwBuffer.length === 0) {
                 activeField = "pw";
               }
@@ -555,6 +589,7 @@
           }
         }
         updateDisplays();
+        scheduleReveal();
       });
       keypad.appendChild(btn);
     });
