@@ -106,7 +106,9 @@ function formatDate(unixSec) {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
-  return `${y}.${m}.${day}`;
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mm = String(d.getMinutes()).padStart(2, "0");
+  return `${y}.${m}.${day} ${hh}:${mm}`;
 }
 
 let currentSort = "created_desc";
@@ -117,7 +119,7 @@ function applySortChipStyles() {
   sortBar.querySelectorAll(".sort-chip").forEach((chip) => {
     const isCurrent = chip.dataset.sort === currentSort;
     chip.className =
-      "sort-chip shrink-0 px-2.5 py-1 rounded-full border " +
+      "sort-chip shrink-0 px-2 py-0.5 rounded-full border " +
       (isCurrent
         ? "bg-blue-600 text-white border-blue-600 font-semibold"
         : "bg-white text-slate-700 border-slate-300 active:bg-slate-100");
@@ -170,54 +172,70 @@ function renderTree(data) {
   const pid = encodeURIComponent(data.project.id);
   const currentId = folderId || null;
   const isRoot = !currentId;
-  const lines = [];
 
-  lines.push(`
-    <a href="/project.html?id=${pid}" class="inline-flex items-center px-2.5 py-1 rounded-full border shrink-0 transition ${isRoot ? "bg-blue-600 text-white border-blue-600 font-semibold" : "bg-white text-slate-700 border-slate-300 active:bg-slate-100"}">
+  const projectChip = `
+    <a href="/project.html?id=${pid}" class="inline-flex items-center px-2.5 py-0.5 rounded-full border transition ${isRoot ? "bg-blue-600 text-white border-blue-600 font-semibold" : "bg-white text-slate-700 border-slate-300 active:bg-slate-100"}">
       ${escapeHtml(data.project.name)}
     </a>
-  `);
+  `;
 
-  if (all.length > 0) {
-    const map = new Map();
-    all.forEach((f) => map.set(f.id, { ...f, children: [] }));
-    const roots = [];
-    all.forEach((f) => {
-      const node = map.get(f.id);
-      if (f.parent_folder_id && map.has(f.parent_folder_id)) {
-        map.get(f.parent_folder_id).children.push(node);
-      } else {
-        roots.push(node);
-      }
-    });
-    const sortByName = (a, b) => a.name.localeCompare(b.name, "ko");
-    function sortRec(nodes) {
-      nodes.sort(sortByName);
-      nodes.forEach((n) => sortRec(n.children));
-    }
-    sortRec(roots);
-
-    function walk(nodes, pathPrefix) {
-      for (const n of nodes) {
-        const fullPath = pathPrefix ? `${pathPrefix} / ${n.name}` : n.name;
-        const isCurrent = n.id === currentId;
-        lines.push(`
-          <a href="/project.html?id=${pid}&folder=${encodeURIComponent(n.id)}" class="inline-flex items-center px-2.5 py-1 rounded-full border shrink-0 transition ${isCurrent ? "bg-blue-600 text-white border-blue-600 font-semibold" : "bg-amber-50 text-amber-900 border-amber-200 active:bg-amber-100"}">
-            📁 ${escapeHtml(fullPath)}
-          </a>
-        `);
-        if (n.children.length > 0) walk(n.children, fullPath);
-      }
-    }
-    walk(roots, "");
+  if (all.length === 0) {
+    folderTreeEl.innerHTML = projectChip;
+    return;
   }
 
-  folderTreeEl.innerHTML = lines.join("");
-
-  const currentEl = folderTreeEl.querySelector(".bg-blue-600");
-  if (currentEl && currentEl.scrollIntoView) {
-    currentEl.scrollIntoView({ block: "nearest", inline: "nearest" });
+  const map = new Map();
+  all.forEach((f) => map.set(f.id, { ...f, children: [] }));
+  const roots = [];
+  all.forEach((f) => {
+    const node = map.get(f.id);
+    if (f.parent_folder_id && map.has(f.parent_folder_id)) {
+      map.get(f.parent_folder_id).children.push(node);
+    } else {
+      roots.push(node);
+    }
+  });
+  const sortByName = (a, b) => a.name.localeCompare(b.name, "ko");
+  function sortRec(nodes) {
+    nodes.sort(sortByName);
+    nodes.forEach((n) => sortRec(n.children));
   }
+  sortRec(roots);
+
+  const DEPTH_BG = [
+    "bg-amber-100 text-amber-900 border-amber-300",
+    "bg-amber-50 text-amber-900 border-amber-200",
+    "bg-yellow-50 text-yellow-900 border-yellow-200",
+    "bg-orange-50 text-orange-900 border-orange-200",
+  ];
+
+  function renderNode(node, depth) {
+    const isCurrent = node.id === currentId;
+    const idx = Math.min(depth - 1, DEPTH_BG.length - 1);
+    const normalBg = DEPTH_BG[idx];
+    const cls = isCurrent
+      ? "bg-blue-600 text-white border-blue-600 font-semibold"
+      : normalBg + " active:opacity-70";
+    const chip = `
+      <a href="/project.html?id=${pid}&folder=${encodeURIComponent(node.id)}" class="inline-flex items-center px-2 py-0.5 rounded-full border transition ${cls}">
+        📁 ${escapeHtml(node.name)}
+      </a>
+    `;
+    const childrenHtml =
+      node.children.length > 0
+        ? `<div class="ml-3 mt-1 flex flex-wrap gap-1 items-start border-l border-amber-200 pl-2">
+             ${node.children.map((c) => renderNode(c, depth + 1)).join("")}
+           </div>`
+        : "";
+    return `<div class="inline-block align-top">${chip}${childrenHtml}</div>`;
+  }
+
+  folderTreeEl.innerHTML = `
+    ${projectChip}
+    <div class="mt-1.5 flex flex-wrap gap-1 items-start">
+      ${roots.map((r) => renderNode(r, 1)).join("")}
+    </div>
+  `;
 }
 
 async function load() {
@@ -347,7 +365,18 @@ function render(data) {
 
   contentsEl.querySelectorAll(".file-check").forEach((cb) => {
     cb.addEventListener("change", () => {
-      toggleFileSelected(cb.dataset.id, cb.checked);
+      const id = cb.dataset.id;
+      toggleFileSelected(id, cb.checked);
+      const row = cb.closest(".file-row");
+      if (row) {
+        if (cb.checked) {
+          row.classList.add("border-blue-400", "bg-blue-50");
+          row.classList.remove("border-slate-200", "bg-white");
+        } else {
+          row.classList.remove("border-blue-400", "bg-blue-50");
+          row.classList.add("border-slate-200", "bg-white");
+        }
+      }
     });
     cb.addEventListener("click", (e) => e.stopPropagation());
   });

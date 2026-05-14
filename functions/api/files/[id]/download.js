@@ -17,7 +17,7 @@ export async function onRequestGet({ params, env }) {
   return new Response(obj.body, {
     headers: {
       "Content-Type": file.content_type || "application/octet-stream",
-      "Content-Disposition": `inline; filename*=UTF-8''${encodedName}`,
+      "Content-Disposition": `attachment; filename*=UTF-8''${encodedName}`,
       "Cache-Control": "private, no-cache",
     },
   });

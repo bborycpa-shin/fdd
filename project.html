@@ -29,48 +29,38 @@
       z-index: 1000;
       pointer-events: none;
     }
-    #folder-tree::-webkit-scrollbar,
-    #sort-bar::-webkit-scrollbar { display: none; }
-    #folder-tree, #sort-bar { scrollbar-width: none; }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-900 min-h-screen">
   <main class="max-w-md mx-auto px-3 py-4 pb-28">
-    <a href="/" class="inline-flex items-center text-slate-600 active:text-slate-900 mb-2 text-xs">
-      ← 프로젝트 목록
+    <a href="/" class="inline-flex items-center gap-1 text-xs text-slate-700 bg-white border border-slate-200 rounded-full pl-2 pr-3 py-1 mb-3 active:bg-slate-100 shadow-sm font-medium">
+      <span class="text-base leading-none">‹</span>
+      <span>프로젝트 목록</span>
     </a>
 
-    <h1 id="project-name" class="text-base font-bold mb-2 break-all leading-tight">&nbsp;</h1>
+    <div class="flex items-start gap-2 mb-3">
+      <h1 id="project-name" class="text-base font-bold break-all leading-tight flex-1 min-w-0">&nbsp;</h1>
+      <button id="new-folder-btn" class="shrink-0 text-[11px] px-2 py-1 rounded-lg border border-slate-300 bg-white active:bg-slate-100 font-medium">
+        + 폴더
+      </button>
+      <button id="upload-btn" class="shrink-0 text-[11px] px-2 py-1 rounded-lg bg-blue-600 text-white active:bg-blue-700 font-medium">
+        ⬆ 올리기
+      </button>
+    </div>
 
     <div id="tree-container" class="mb-3">
-      <div id="folder-tree" class="flex gap-1.5 overflow-x-auto whitespace-nowrap pb-1 text-xs"></div>
+      <div id="folder-tree" class="text-[11px]"></div>
     </div>
 
-    <div class="grid grid-cols-2 gap-2 mb-2">
-      <button
-        id="new-folder-btn"
-        class="bg-white border border-slate-300 text-slate-900 text-sm font-medium rounded-xl py-2 active:bg-slate-100 transition"
-      >
-        + 새 폴더
-      </button>
-      <button
-        id="upload-btn"
-        class="bg-blue-600 text-white text-sm font-medium rounded-xl py-2 active:bg-blue-700 transition"
-      >
-        ⬆ 파일 올리기
-      </button>
-    </div>
+    <input id="file-input" type="file" multiple accept="*/*" class="hidden" />
 
-    <input id="file-input" type="file" multiple class="hidden" />
-
-    <div id="sort-bar" class="flex gap-1 overflow-x-auto whitespace-nowrap pb-1 mt-3 mb-2 text-xs">
-      <button data-action="select-all" id="select-all-btn" class="shrink-0 px-2.5 py-1 rounded-full border bg-white text-slate-700 border-slate-300 active:bg-slate-100">☐ 전체</button>
-      <span class="w-px bg-slate-200 mx-0.5 self-stretch shrink-0"></span>
-      <button data-sort="created_desc" class="sort-chip shrink-0 px-2.5 py-1 rounded-full border">최신순</button>
-      <button data-sort="created_asc" class="sort-chip shrink-0 px-2.5 py-1 rounded-full border">오래된순</button>
-      <button data-sort="name_asc" class="sort-chip shrink-0 px-2.5 py-1 rounded-full border">이름순</button>
-      <button data-sort="name_desc" class="sort-chip shrink-0 px-2.5 py-1 rounded-full border">이름역순</button>
-      <button data-sort="type" class="sort-chip shrink-0 px-2.5 py-1 rounded-full border">형식순</button>
+    <div id="sort-bar" class="flex flex-wrap gap-1 mb-2 text-[11px]">
+      <button data-action="select-all" id="select-all-btn" class="shrink-0 px-2 py-0.5 rounded-full border bg-white text-slate-700 border-slate-300 active:bg-slate-100">☐ 전체</button>
+      <button data-sort="created_desc" class="sort-chip shrink-0 px-2 py-0.5 rounded-full border">최신순</button>
+      <button data-sort="created_asc" class="sort-chip shrink-0 px-2 py-0.5 rounded-full border">오래된순</button>
+      <button data-sort="name_asc" class="sort-chip shrink-0 px-2 py-0.5 rounded-full border">이름순</button>
+      <button data-sort="name_desc" class="sort-chip shrink-0 px-2 py-0.5 rounded-full border">이름역순</button>
+      <button data-sort="type" class="sort-chip shrink-0 px-2 py-0.5 rounded-full border">형식순</button>
     </div>
 
     <p id="upload-status" class="text-xs text-blue-600 mt-2 mb-1 hidden text-center"></p>
