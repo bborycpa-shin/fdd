@@ -1,19 +1,28 @@
 (function () {
   const PW_KEY = "fdd_admin_pw";
+  const UPLOADER_KEY = "fdd_uploader_id";
   let storedPw = localStorage.getItem(PW_KEY) || null;
+  let uploaderId = localStorage.getItem(UPLOADER_KEY);
+  if (!uploaderId) {
+    uploaderId =
+      (crypto.randomUUID && crypto.randomUUID()) ||
+      String(Date.now()) + "-" + Math.random().toString(36).slice(2);
+    localStorage.setItem(UPLOADER_KEY, uploaderId);
+  }
   let isAdmin = false;
   let locked = false;
 
   const origFetch = window.fetch.bind(window);
   window.fetch = function (input, init) {
     init = init || {};
-    if (storedPw) {
-      const headers = new Headers(init.headers || {});
-      headers.set("X-Admin-Password", storedPw);
-      init.headers = headers;
-    }
+    const headers = new Headers(init.headers || {});
+    if (storedPw) headers.set("X-Admin-Password", storedPw);
+    if (uploaderId) headers.set("X-Uploader-Id", uploaderId);
+    init.headers = headers;
     return origFetch(input, init);
   };
+
+  window.fddUploaderId = uploaderId;
 
   function setAdminBodyClass() {
     document.body.classList.toggle("admin-mode", isAdmin);

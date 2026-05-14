@@ -1,11 +1,56 @@
-export async function onRequestDelete({ params, env }) {
+async function sha256Hex(text) {
+  const buf = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(text)
+  );
+  return Array.from(new Uint8Array(buf))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+async function isAdminRequest(request, env) {
+  const pw = request.headers.get("X-Admin-Password");
+  if (!pw) return false;
+  try {
+    const hash = await sha256Hex(pw);
+    const row = await env.DB.prepare(
+      "SELECT value FROM settings WHERE key = ?"
+    )
+      .bind("admin_password_hash")
+      .first();
+    return !!row && row.value === hash;
+  } catch {
+    return false;
+  }
+}
+
+const OWNER_DELETE_WINDOW_SEC = 5 * 60;
+
+export async function onRequestDelete({ params, request, env }) {
   const id = params.id;
 
-  const file = await env.DB.prepare("SELECT r2_key FROM files WHERE id = ?")
+  const file = await env.DB.prepare(
+    "SELECT r2_key, uploader_id, uploaded_at FROM files WHERE id = ?"
+  )
     .bind(id)
     .first();
 
   if (!file) return new Response("File not found", { status: 404 });
+
+  const admin = await isAdminRequest(request, env);
+  if (!admin) {
+    const uploaderId = String(
+      request.headers.get("X-Uploader-Id") || ""
+    ).trim();
+    if (!uploaderId || uploaderId !== file.uploader_id) {
+      return new Response("Forbidden", { status: 403 });
+    }
+    const nowSec = Math.floor(Date.now() / 1000);
+    const ageSec = nowSec - (file.uploaded_at || 0);
+    if (ageSec > OWNER_DELETE_WINDOW_SEC) {
+      return new Response("Owner delete window expired", { status: 403 });
+    }
+  }
 
   await env.FILES.delete(file.r2_key);
   await env.DB.prepare("DELETE FROM files WHERE id = ?").bind(id).run();

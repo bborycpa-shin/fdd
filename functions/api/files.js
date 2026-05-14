@@ -31,15 +31,26 @@ export async function onRequestPost({ request, env }) {
   const id = crypto.randomUUID();
   const r2_key = `${projectId}/${id}`;
   const contentType = file.type || "application/octet-stream";
+  const uploaderId =
+    String(request.headers.get("X-Uploader-Id") || "").trim() || null;
 
   await env.FILES.put(r2_key, file.stream(), {
     httpMetadata: { contentType },
   });
 
   await env.DB.prepare(
-    "INSERT INTO files (id, project_id, folder_id, name, size, content_type, r2_key) VALUES (?, ?, ?, ?, ?, ?, ?)"
+    "INSERT INTO files (id, project_id, folder_id, name, size, content_type, r2_key, uploader_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
   )
-    .bind(id, projectId, folderId, file.name, file.size, contentType, r2_key)
+    .bind(
+      id,
+      projectId,
+      folderId,
+      file.name,
+      file.size,
+      contentType,
+      r2_key,
+      uploaderId
+    )
     .run();
 
   return Response.json(

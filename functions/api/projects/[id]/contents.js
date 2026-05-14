@@ -50,7 +50,7 @@ export async function onRequestGet({ params, request, env }) {
 
   if (showAll) {
     const { results: allFiles } = await env.DB.prepare(
-      "SELECT id, name, size, content_type, folder_id, uploaded_at FROM files WHERE project_id = ?"
+      "SELECT id, name, size, content_type, folder_id, uploaded_at, uploader_id FROM files WHERE project_id = ?"
     )
       .bind(projectId)
       .all();
@@ -118,14 +118,14 @@ export async function onRequestGet({ params, request, env }) {
   const files = folderId
     ? (
         await env.DB.prepare(
-          "SELECT id, name, size, content_type, uploaded_at FROM files WHERE project_id = ? AND folder_id = ? ORDER BY uploaded_at DESC"
+          "SELECT id, name, size, content_type, uploaded_at, uploader_id FROM files WHERE project_id = ? AND folder_id = ? ORDER BY uploaded_at DESC"
         )
           .bind(projectId, folderId)
           .all()
       ).results
     : (
         await env.DB.prepare(
-          "SELECT id, name, size, content_type, uploaded_at FROM files WHERE project_id = ? AND folder_id IS NULL ORDER BY uploaded_at DESC"
+          "SELECT id, name, size, content_type, uploaded_at, uploader_id FROM files WHERE project_id = ? AND folder_id IS NULL ORDER BY uploaded_at DESC"
         )
           .bind(projectId)
           .all()

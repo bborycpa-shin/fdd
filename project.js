@@ -480,12 +480,21 @@ function render(data) {
     `);
   }
 
+  const myUploaderId = window.fddUploaderId || localStorage.getItem("fdd_uploader_id");
+  const nowSec = Math.floor(Date.now() / 1000);
+  const OWNER_WINDOW = 5 * 60;
+
   for (const file of files) {
     const icon = getFileIcon(file.name);
     const isChecked = selectedFileIds.has(file.id);
     const pathLine = showAll && file.folder_path
       ? `<p class="text-[9px] text-blue-600/80 mt-0.5">📁 ${escapeHtml(file.folder_path)}</p>`
       : (showAll ? `<p class="text-[9px] text-slate-400 mt-0.5">📁 (루트)</p>` : "");
+    const isMine =
+      myUploaderId && file.uploader_id && file.uploader_id === myUploaderId;
+    const within5 = nowSec - (file.uploaded_at || 0) <= OWNER_WINDOW;
+    const ownerCanDelete = isMine && within5;
+    const deleteClass = ownerCanDelete ? "" : "admin-only";
     items.push(`
       <div class="file-row flex items-center gap-1.5 px-2 py-1 rounded-lg border cursor-pointer ${isChecked ? "border-blue-400 bg-blue-50" : "border-slate-200 bg-white"}" data-id="${file.id}">
         <label class="shrink-0 self-center p-0.5 -ml-0.5" onclick="event.stopPropagation()">
@@ -501,7 +510,7 @@ function render(data) {
         </div>
         <button class="file-download text-slate-400 active:text-blue-600 px-1 py-0.5 text-sm shrink-0 self-center" data-id="${file.id}" aria-label="다운로드">⬇</button>
         <button class="file-rename admin-only text-slate-400 active:text-blue-600 px-1 py-0.5 text-sm shrink-0 self-center" data-id="${file.id}" data-name="${escapeHtml(file.name)}" aria-label="이름 바꾸기">✏</button>
-        <button class="file-delete admin-only text-slate-400 active:text-red-500 px-1 py-0.5 text-sm shrink-0 self-center" data-id="${file.id}" data-name="${escapeHtml(file.name)}" aria-label="파일 삭제">🗑</button>
+        <button class="file-delete ${deleteClass} text-slate-400 active:text-red-500 px-1 py-0.5 text-sm shrink-0 self-center" data-id="${file.id}" data-name="${escapeHtml(file.name)}" aria-label="파일 삭제">🗑</button>
       </div>
     `);
   }

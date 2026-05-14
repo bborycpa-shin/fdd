@@ -29,6 +29,7 @@ async function ensureMigrations(env) {
   try {
     await ensureColumn(env, "projects", "image_r2_key", "TEXT");
     await ensureColumn(env, "projects", "color_index", "INTEGER");
+    await ensureColumn(env, "files", "uploader_id", "TEXT");
 
     await env.DB.prepare(
       "CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT)"
@@ -111,7 +112,10 @@ export async function onRequest(context) {
       const publicPostPaths = new Set(["/api/files", "/api/folders"]);
       const isPublicCreate =
         method === "POST" && publicPostPaths.has(path);
-      if (!isPublicCreate && ["POST", "PATCH", "DELETE", "PUT"].includes(method)) {
+      const isOwnerFileDelete =
+        method === "DELETE" && /^\/api\/files\/[^/]+$/.test(path);
+      const isMutating = ["POST", "PATCH", "DELETE", "PUT"].includes(method);
+      if (isMutating && !isPublicCreate && !isOwnerFileDelete) {
         return new Response("Admin required", { status: 403 });
       }
     }
