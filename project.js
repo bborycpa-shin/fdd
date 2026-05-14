@@ -37,6 +37,22 @@ const PROJECT_COLORS = [
   { bgFrom: "#f0fdfa", bgTo: "#cffafe", grad: "from-teal-500 to-cyan-600" },
   { bgFrom: "#fffbeb", bgTo: "#ffedd5", grad: "from-amber-500 to-orange-600" },
   { bgFrom: "#f1f5f9", bgTo: "#e2e8f0", grad: "from-slate-600 to-slate-800" },
+  { bgFrom: "#e0f2fe", bgTo: "#bae6fd", grad: "from-sky-500 to-sky-700" },
+  { bgFrom: "#cffafe", bgTo: "#a5f3fc", grad: "from-cyan-500 to-cyan-700" },
+  { bgFrom: "#ecfccb", bgTo: "#d9f99d", grad: "from-lime-500 to-lime-700" },
+  { bgFrom: "#fef9c3", bgTo: "#fef08a", grad: "from-yellow-500 to-yellow-700" },
+  { bgFrom: "#fee2e2", bgTo: "#fecaca", grad: "from-red-500 to-red-700" },
+  { bgFrom: "#fae8ff", bgTo: "#f5d0fe", grad: "from-fuchsia-500 to-fuchsia-700" },
+  { bgFrom: "#e0e7ff", bgTo: "#c7d2fe", grad: "from-indigo-500 to-indigo-700" },
+  { bgFrom: "#ede9fe", bgTo: "#ddd6fe", grad: "from-violet-500 to-violet-700" },
+  { bgFrom: "#bfdbfe", bgTo: "#93c5fd", grad: "from-blue-600 to-blue-800" },
+  { bgFrom: "#a7f3d0", bgTo: "#6ee7b7", grad: "from-emerald-600 to-emerald-800" },
+  { bgFrom: "#fde68a", bgTo: "#fcd34d", grad: "from-amber-600 to-orange-700" },
+  { bgFrom: "#fbcfe8", bgTo: "#f9a8d4", grad: "from-pink-600 to-rose-700" },
+  { bgFrom: "#d8b4fe", bgTo: "#c084fc", grad: "from-purple-600 to-purple-800" },
+  { bgFrom: "#fca5a5", bgTo: "#f87171", grad: "from-red-600 to-red-800" },
+  { bgFrom: "#fdba74", bgTo: "#fb923c", grad: "from-orange-600 to-red-700" },
+  { bgFrom: "#cbd5e1", bgTo: "#94a3b8", grad: "from-slate-600 to-slate-900" },
 ];
 
 function projectColorByHash(id) {

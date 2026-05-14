@@ -32,7 +32,7 @@ export async function onRequestPatch({ params, request, env }) {
       colorIdx = null;
     } else {
       colorIdx = parseInt(body.color_index, 10);
-      if (Number.isNaN(colorIdx) || colorIdx < 0 || colorIdx > 7) {
+      if (Number.isNaN(colorIdx) || colorIdx < 0 || colorIdx > 23) {
         return new Response("invalid color_index", { status: 400 });
       }
     }
