@@ -42,11 +42,11 @@
 <body class="text-slate-900">
   <main class="max-w-md mx-auto px-3 py-3 pb-28">
     <div class="flex items-center gap-1.5 mb-3">
-      <a href="/" class="inline-flex items-center gap-0.5 text-[11px] text-slate-700 bg-white border border-slate-200 rounded-full pl-1.5 pr-2.5 py-1 active:bg-slate-100 shadow-sm font-medium">
+      <a href="/" class="shrink-0 inline-flex items-center gap-0.5 text-[11px] text-slate-700 bg-white border border-slate-200 rounded-full pl-1.5 pr-2.5 py-1 active:bg-slate-100 shadow-sm font-medium">
         <span class="text-sm leading-none">‹</span>
         <span>목록</span>
       </a>
-      <div class="flex-1"></div>
+      <div id="project-image-row" class="flex-1 flex justify-center items-center min-w-0"></div>
       <button id="new-folder-btn" class="shrink-0 text-[11px] px-2 py-1 rounded-lg border border-slate-300 bg-white active:bg-slate-100 font-medium shadow-sm">
         + 폴더
       </button>
@@ -54,8 +54,6 @@
         ⬆ 올리기
       </button>
     </div>
-
-    <div id="project-image-row" class="flex justify-center mb-3"></div>
 
     <div id="tree-container" class="mb-3">
       <div id="folder-tree" class="text-[11px]"></div>

@@ -289,11 +289,11 @@ function renderProjectImage(data) {
   if (data.project.has_image) {
     const url = `/api/projects/${encodeURIComponent(projectId)}/image?t=${Date.now()}`;
     projectImageRow.innerHTML = `
-      <div class="relative">
-        <button id="project-image-btn" class="block w-20 h-20 rounded-xl overflow-hidden shadow-md bg-white border border-white active:opacity-80">
-          <img src="${url}" alt="프로젝트 로고" class="w-full h-full object-cover" />
+      <div class="relative inline-flex items-center">
+        <button id="project-image-btn" class="block bg-white rounded-md shadow-sm border border-white p-0.5 active:opacity-80" title="클릭/끌기/Ctrl+V로 변경">
+          <img src="${url}" alt="프로젝트 로고" class="block object-contain" style="max-height: 32px; max-width: 80px; height: auto; width: auto;" />
         </button>
-        <button id="project-image-remove" class="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-white border border-slate-300 text-[10px] text-slate-500 active:text-red-500 shadow" aria-label="로고 삭제">✕</button>
+        <button id="project-image-remove" class="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-white border border-slate-300 text-[8px] text-slate-500 active:text-red-500 shadow leading-none flex items-center justify-center" aria-label="로고 삭제">✕</button>
       </div>
     `;
     document
@@ -316,9 +316,8 @@ function renderProjectImage(data) {
       });
   } else {
     projectImageRow.innerHTML = `
-      <button id="project-image-btn" class="w-20 h-20 rounded-xl bg-white/70 border-2 border-dashed border-slate-300 text-slate-400 font-medium active:bg-white flex flex-col items-center justify-center leading-tight">
-        <span class="text-[11px]">+ 로고</span>
-        <span class="text-[8px] mt-0.5 opacity-80">탭·끌기·붙여넣기</span>
+      <button id="project-image-btn" class="text-[10px] px-2 h-7 rounded-lg border border-dashed border-slate-300 bg-white/70 text-slate-400 font-medium active:bg-white" title="클릭, 끌어놓기, 또는 Ctrl+V로 로고 추가">
+        + 로고
       </button>
     `;
     document
