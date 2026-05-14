@@ -868,6 +868,29 @@ async function moveSelectedFiles(targetFolderId) {
   await load();
 }
 
+const uploadOverlay = document.getElementById("upload-progress-overlay");
+const uploadProgressBar = document.getElementById("upload-progress-bar");
+const uploadProgressName = document.getElementById("upload-progress-name");
+const uploadProgressCount = document.getElementById("upload-progress-count");
+
+function showUploadOverlay(total) {
+  if (!uploadOverlay) return;
+  uploadOverlay.style.display = "flex";
+  uploadProgressName.textContent = "준비 중...";
+  uploadProgressCount.textContent = `0/${total}`;
+  uploadProgressBar.style.width = "0%";
+}
+function updateUploadOverlay(name, current, total) {
+  if (!uploadOverlay) return;
+  uploadProgressName.textContent = name;
+  uploadProgressCount.textContent = `${current}/${total}`;
+  uploadProgressBar.style.width = `${(current / total) * 100}%`;
+}
+function hideUploadOverlay() {
+  if (!uploadOverlay) return;
+  uploadOverlay.style.display = "none";
+}
+
 async function uploadFiles(files) {
   if (!files || files.length === 0) return;
 
@@ -884,12 +907,13 @@ async function uploadFiles(files) {
     if (files.length === 0) return;
   }
 
-  uploadStatus.classList.remove("hidden");
+  showUploadOverlay(files.length);
+  uploadStatus.classList.add("hidden");
   let success = 0;
   let fail = 0;
 
   for (let i = 0; i < files.length; i++) {
-    uploadStatus.textContent = `${i + 1}/${files.length} 업로드 중: ${files[i].name}`;
+    updateUploadOverlay(files[i].name, i, files.length);
     const fd = new FormData();
     fd.append("project_id", projectId);
     if (folderId) fd.append("folder_id", folderId);
@@ -901,8 +925,11 @@ async function uploadFiles(files) {
     } catch (e) {
       fail++;
     }
+    updateUploadOverlay(files[i].name, i + 1, files.length);
   }
 
+  hideUploadOverlay();
+  uploadStatus.classList.remove("hidden");
   uploadStatus.textContent =
     fail > 0
       ? `완료: ${success}개 성공, ${fail}개 실패`
