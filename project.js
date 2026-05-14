@@ -316,8 +316,9 @@ function renderProjectImage(data) {
       });
   } else {
     projectImageRow.innerHTML = `
-      <button id="project-image-btn" class="w-20 h-20 rounded-xl bg-white/70 border-2 border-dashed border-slate-300 text-slate-400 text-[10px] font-medium active:bg-white">
-        + 로고 추가
+      <button id="project-image-btn" class="w-20 h-20 rounded-xl bg-white/70 border-2 border-dashed border-slate-300 text-slate-400 font-medium active:bg-white flex flex-col items-center justify-center leading-tight">
+        <span class="text-[11px]">+ 로고</span>
+        <span class="text-[8px] mt-0.5 opacity-80">탭·끌기·붙여넣기</span>
       </button>
     `;
     document
@@ -774,6 +775,24 @@ projectImageRow.addEventListener("drop", async (e) => {
   projectImageRow.classList.remove("logo-drop-active");
   const file = e.dataTransfer.files?.[0];
   await uploadLogoImage(file);
+});
+
+window.addEventListener("paste", async (e) => {
+  const tag = e.target && e.target.tagName;
+  if (tag === "INPUT" || tag === "TEXTAREA" || (e.target && e.target.isContentEditable))
+    return;
+  const items = e.clipboardData && e.clipboardData.items;
+  if (!items) return;
+  for (const item of items) {
+    if (item.kind === "file" && item.type.startsWith("image/")) {
+      const file = item.getAsFile();
+      if (file) {
+        e.preventDefault();
+        await uploadLogoImage(file);
+        return;
+      }
+    }
+  }
 });
 
 let dragCounter = 0;
