@@ -41,16 +41,16 @@
 </head>
 <body class="text-slate-900">
   <main class="max-w-md mx-auto pl-3 pr-12 py-3" style="padding-bottom: calc(22vh + 12px);">
-    <div class="flex items-center gap-1.5 mb-3">
-      <a href="/" class="shrink-0 inline-flex items-center gap-0.5 text-[11px] text-slate-700 bg-white border border-slate-200 rounded-full pl-1.5 pr-2.5 py-1 active:bg-slate-100 shadow-sm font-medium">
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 px-2.5 py-2 mb-3 flex items-center gap-1.5">
+      <a href="/" class="shrink-0 inline-flex items-center gap-0.5 text-[11px] text-slate-700 bg-white border border-slate-200 rounded-full pl-1.5 pr-2.5 py-1 active:bg-slate-100 font-medium">
         <span class="text-sm leading-none">‹</span>
         <span>홈으로</span>
       </a>
       <div id="project-image-row" class="flex-1 flex justify-center items-center min-w-0"></div>
-      <button id="new-folder-btn" class="shrink-0 text-[11px] px-2 py-1 rounded-lg border border-slate-300 bg-white active:bg-slate-100 font-medium shadow-sm">
+      <button id="new-folder-btn" class="shrink-0 text-[11px] px-2 py-1 rounded-lg border border-slate-300 bg-white text-slate-800 active:bg-slate-100 font-medium">
         + 폴더
       </button>
-      <button id="upload-btn" class="shrink-0 text-[11px] px-2 py-1 rounded-lg bg-blue-600 text-white active:bg-blue-700 font-medium shadow-sm">
+      <button id="upload-btn" class="shrink-0 text-[11px] px-2 py-1 rounded-lg border border-blue-300 bg-white text-blue-700 active:bg-blue-50 font-medium">
         ⬆ 올리기
       </button>
     </div>
@@ -100,7 +100,7 @@
 
   <div
     id="recent-files-bar"
-    class="fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur border-t border-slate-200 z-30"
+    class="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-slate-300 z-30 shadow-[0_-4px_12px_rgba(0,0,0,0.08)]"
     style="height: 22vh; padding-bottom: env(safe-area-inset-bottom);"
   >
     <div class="max-w-md mx-auto px-3 pt-2 pb-1 h-full flex flex-col">

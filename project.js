@@ -250,7 +250,7 @@ function renderTree(data) {
     </a>
   `;
   const refreshBtn = `
-    <button id="refresh-btn" class="shrink-0 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white border border-slate-300 text-slate-700 active:bg-slate-100 shadow-sm text-[11px] font-medium" aria-label="새로고침">
+    <button id="refresh-btn" class="shrink-0 inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-rose-50 border border-rose-300 text-rose-700 active:bg-rose-100 shadow-sm text-[11px] font-medium" aria-label="새로고침">
       <span class="refresh-icon leading-none inline-block">↻</span>
       <span>새로고침</span>
     </button>
