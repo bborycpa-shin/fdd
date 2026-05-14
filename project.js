@@ -204,10 +204,10 @@ function applySortChipStyles() {
   sortBar.querySelectorAll(".sort-chip").forEach((chip) => {
     const isCurrent = chip.dataset.sort === currentSort;
     chip.className =
-      "sort-chip shrink-0 px-1.5 py-0.5 rounded-full border " +
+      "sort-chip shrink-0 px-1.5 py-px rounded-full border text-[10px] " +
       (isCurrent
-        ? "bg-blue-600 text-white border-blue-600 font-semibold"
-        : "bg-white text-slate-700 border-slate-300 active:bg-slate-100");
+        ? "bg-slate-700 text-white border-slate-700 font-semibold"
+        : "bg-slate-100 text-slate-600 border-slate-200 active:bg-slate-200");
   });
 }
 
