@@ -110,8 +110,9 @@ function renderProjects(projects) {
         ? `<span class="shrink-0 inline-flex items-center justify-center min-w-[22px] h-[18px] px-1 rounded bg-white/80 border border-slate-300 text-[10px] font-bold text-slate-700">#${p.display_number}</span>`
         : "";
       return `
-    <div class="flex items-center gap-2 px-3 py-2 rounded-xl border border-white/60 shadow-sm" style="background: linear-gradient(135deg, ${color.bgFrom}, ${color.bgTo})">
-      <button class="project-open flex-1 flex items-center gap-2.5 min-w-0 active:opacity-60 transition text-left" data-id="${p.id}">
+    <div class="project-row flex items-center gap-1 px-2 py-2 rounded-xl border border-white/60 shadow-sm" data-id="${p.id}" style="background: linear-gradient(135deg, ${color.bgFrom}, ${color.bgTo})">
+      <span class="drag-handle admin-only shrink-0 inline-flex items-center justify-center w-5 text-slate-500 text-base select-none" style="cursor:grab;touch-action:none;" title="드래그하여 순서 변경" aria-hidden="true">⋮⋮</span>
+      <button class="project-open flex-1 flex items-center gap-2 min-w-0 active:opacity-60 transition text-left" data-id="${p.id}">
         ${iconHtml}
         <div class="flex-1 min-w-0 leading-tight">
           <div class="flex items-center gap-1.5 min-w-0">${numBadge}<p class="text-sm font-bold break-all text-slate-900 min-w-0">${escapeHtml(p.name)}</p></div>
@@ -160,6 +161,41 @@ function renderProjects(projects) {
         alert("삭제 실패");
       }
     });
+  });
+
+  setupSortable();
+}
+
+let sortableInstance = null;
+function setupSortable() {
+  if (sortableInstance) {
+    sortableInstance.destroy();
+    sortableInstance = null;
+  }
+  if (!window.Sortable) return;
+  if (!window.fddAdmin || !window.fddAdmin.isAdmin()) return;
+  sortableInstance = window.Sortable.create(projectList, {
+    animation: 150,
+    handle: ".drag-handle",
+    ghostClass: "opacity-50",
+    chosenClass: "ring-2",
+    onEnd: async () => {
+      const newOrder = Array.from(projectList.querySelectorAll(".project-row")).map(
+        (el) => el.dataset.id
+      );
+      try {
+        const res = await fetch("/api/admin/projects/reorder", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ order: newOrder }),
+        });
+        if (!res.ok) throw new Error();
+        await loadProjects();
+      } catch (e) {
+        alert("순서 변경 실패");
+        await loadProjects();
+      }
+    },
   });
 }
 

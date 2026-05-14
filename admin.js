@@ -179,7 +179,7 @@
           <span style="position:absolute;height:18px;width:18px;left:${locked ? "20px" : "2px"};top:2px;background:white;border-radius:50%;transition:0.2s;pointer-events:none;"></span>
         </label>
       </div>
-      <button id="admin-access-codes" style="width:100%;font-size:12px;padding:8px;background:#eff6ff;color:#1d4ed8;font-weight:600;border:1px solid #bfdbfe;border-radius:8px;margin-bottom:6px;cursor:pointer;">🔑 식별코드 관리</button>
+      <button id="admin-access-codes" style="width:100%;font-size:12px;padding:8px;background:#eff6ff;color:#1d4ed8;font-weight:600;border:1px solid #bfdbfe;border-radius:8px;margin-bottom:6px;cursor:pointer;">🔑 식별번호 관리</button>
       <button id="admin-change-user-pw" style="width:100%;font-size:12px;padding:8px;background:white;color:#0f172a;font-weight:500;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:6px;cursor:pointer;">일반 비밀번호 변경</button>
       <button id="admin-change-pw" style="width:100%;font-size:12px;padding:8px;background:white;color:#0f172a;font-weight:500;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:8px;cursor:pointer;">관리자 비밀번호 변경</button>
       <button id="admin-logout" style="width:100%;font-size:12px;padding:8px;background:white;color:#dc2626;font-weight:500;border:1px solid #cbd5e1;border-radius:8px;cursor:pointer;">관리자 로그아웃</button>
@@ -215,10 +215,10 @@
     const body = document.getElementById("admin-modal-body");
     body.innerHTML = `
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-        <h3 style="font-size:14px;font-weight:700;margin:0;">🔑 식별코드 관리</h3>
+        <h3 style="font-size:14px;font-weight:700;margin:0;">🔑 식별번호 관리</h3>
         <button id="admin-back" style="color:#94a3b8;font-size:13px;background:none;border:none;cursor:pointer;">‹ 뒤로</button>
       </div>
-      <button id="ac-new" style="width:100%;font-size:12px;padding:8px;background:#2563eb;color:white;font-weight:500;border:none;border-radius:8px;margin-bottom:10px;cursor:pointer;">+ 새 식별코드 만들기</button>
+      <button id="ac-new" style="width:100%;font-size:12px;padding:8px;background:#2563eb;color:white;font-weight:500;border:none;border-radius:8px;margin-bottom:10px;cursor:pointer;">+ 새 식별번호 만들기</button>
       <div id="ac-list" style="display:flex;flex-direction:column;gap:6px;"></div>
     `;
     document.getElementById("admin-back").addEventListener("click", showAdminPanel);
@@ -233,7 +233,7 @@
       if (!res.ok) throw new Error();
       const data = await res.json();
       if (data.codes.length === 0) {
-        list.innerHTML = '<p style="font-size:11px;color:#94a3b8;text-align:center;padding:10px;">등록된 식별코드가 없어요</p>';
+        list.innerHTML = '<p style="font-size:11px;color:#94a3b8;text-align:center;padding:10px;">등록된 식별번호가 없어요</p>';
         return;
       }
       list.innerHTML = data.codes.map(c => `
@@ -259,7 +259,7 @@
       });
       list.querySelectorAll('.ac-del').forEach(btn => {
         btn.addEventListener('click', async () => {
-          if (!confirm(`식별코드 ${btn.dataset.code}를 삭제할까요?`)) return;
+          if (!confirm(`식별번호 ${btn.dataset.code}를 삭제할까요?`)) return;
           try {
             const r = await origFetch(`/api/admin/access-codes/${encodeURIComponent(btn.dataset.code)}`, {
               method: 'DELETE',
@@ -285,7 +285,7 @@
     const body = document.getElementById("admin-modal-body");
     body.innerHTML = `
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
-        <h3 style="font-size:14px;font-weight:700;margin:0;">${existing ? '식별코드 수정' : '새 식별코드'}</h3>
+        <h3 style="font-size:14px;font-weight:700;margin:0;">${existing ? '식별번호 수정' : '새 식별번호'}</h3>
         <button id="admin-back" style="color:#94a3b8;font-size:13px;background:none;border:none;cursor:pointer;">‹ 뒤로</button>
       </div>
       <label style="font-size:11px;color:#64748b;display:block;margin-bottom:4px;">코드 (6자리, <code>0-9 * # @ ! ~</code>만 사용)</label>
@@ -493,7 +493,7 @@
         <label style="font-size:10px;color:#475569;width:100%;margin-bottom:2px;font-weight:500;">비밀번호</label>
         <div id="login-pw-display" class="input-field" style="width:100%;background:white;border:1px solid #cbd5e1;border-radius:8px;padding:7px;text-align:center;font-size:17px;letter-spacing:5px;min-height:34px;margin-bottom:6px;color:#0f172a;font-weight:600;cursor:pointer;box-sizing:border-box;"></div>
 
-        <label style="font-size:10px;color:#475569;width:100%;margin-bottom:2px;font-weight:500;">식별코드 (6자리)</label>
+        <label style="font-size:10px;color:#475569;width:100%;margin-bottom:2px;font-weight:500;">식별번호 (6자리)</label>
         <div id="login-code-display" class="input-field" style="width:100%;background:white;border:1px solid #cbd5e1;border-radius:8px;padding:7px;text-align:center;font-size:17px;letter-spacing:5px;min-height:34px;margin-bottom:4px;color:#0f172a;font-weight:600;cursor:pointer;box-sizing:border-box;"></div>
 
         <p id="login-error" style="font-size:10px;color:#dc2626;margin:0 0 6px 0;min-height:14px;text-align:center;"></p>
@@ -502,7 +502,7 @@
 
         <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:#475569;margin-bottom:7px;">
           <input id="login-remember" type="checkbox" style="width:13px;height:13px;accent-color:#2563eb;" />
-          이 기기에서 비번+식별코드 기억
+          이 기기에서 비번+식별번호 기억
         </label>
 
         <button id="login-submit" style="width:100%;font-size:14px;padding:8px;background:#2563eb;color:white;font-weight:500;border:none;border-radius:8px;cursor:pointer;margin-bottom:5px;">로그인</button>
@@ -560,11 +560,11 @@
 
     const submit = async () => {
       if (!pwBuffer || !codeBuffer) {
-        errEl.textContent = "비밀번호와 식별코드를 모두 입력하세요";
+        errEl.textContent = "비밀번호와 식별번호를 모두 입력하세요";
         return;
       }
       if (codeBuffer.length !== 6) {
-        errEl.textContent = "식별코드는 6자리입니다";
+        errEl.textContent = "식별번호는 6자리입니다";
         return;
       }
       try {
@@ -590,7 +590,7 @@
         storedAccessCode = codeBuffer;
         location.reload();
       } catch {
-        errEl.textContent = "비밀번호 또는 식별코드가 맞지 않아요";
+        errEl.textContent = "비밀번호 또는 식별번호가 맞지 않아요";
         pwBuffer = "";
         codeBuffer = "";
         activeField = "pw";
