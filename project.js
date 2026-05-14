@@ -538,7 +538,7 @@ function render(data) {
             ${pathLine}
           </div>
         </div>
-        <button class="file-download text-slate-400 active:text-blue-600 px-1 py-0.5 text-sm shrink-0 self-center" data-id="${file.id}" aria-label="다운로드">⬇</button>
+        <button class="file-download text-slate-400 active:text-blue-600 px-1 py-0.5 text-sm shrink-0 self-center" data-id="${file.id}" data-name="${escapeHtml(file.name)}" aria-label="다운로드">⬇</button>
         <button class="file-rename admin-only text-slate-400 active:text-blue-600 px-1 py-0.5 text-sm shrink-0 self-center" data-id="${file.id}" data-name="${escapeHtml(file.name)}" aria-label="이름 바꾸기">✏</button>
         <button class="file-delete ${deleteClass} text-slate-400 active:text-red-500 px-1 py-0.5 text-sm shrink-0 self-center" data-id="${file.id}" data-name="${escapeHtml(file.name)}" aria-label="파일 삭제">🗑</button>
       </div>
@@ -586,10 +586,11 @@ function render(data) {
   });
 
   contentsEl.querySelectorAll(".file-download").forEach((btn) => {
-    btn.addEventListener("click", (e) => {
+    btn.addEventListener("click", async (e) => {
       e.stopPropagation();
       const id = btn.dataset.id;
-      window.open(`/api/files/${encodeURIComponent(id)}/download`, "_blank");
+      const name = btn.dataset.name || "";
+      await downloadFile(id, name);
     });
   });
 
@@ -750,18 +751,31 @@ bulkDeleteBtn.addEventListener("click", async () => {
   await load();
 });
 
-bulkDownloadBtn.addEventListener("click", () => {
+bulkDownloadBtn.addEventListener("click", async () => {
   const ids = [...selectedFileIds];
   if (ids.length === 0) return;
   if (ids.length > 5) {
     if (!confirm(`${ids.length}개를 한 번에 받으면 브라우저가 일부를 막을 수 있어요. 계속할까요?`))
       return;
   }
-  ids.forEach((id, i) => {
-    setTimeout(() => {
-      window.open(`/api/files/${encodeURIComponent(id)}/download`, "_blank");
-    }, i * 200);
-  });
+  if (window.showSaveFilePicker) {
+    // 지원 브라우저: 파일마다 저장 위치 선택. 취소하면 중단
+    const nameById = new Map();
+    if (cachedData && cachedData.files) {
+      cachedData.files.forEach((f) => nameById.set(f.id, f.name));
+    }
+    for (const id of ids) {
+      const name = nameById.get(id) || "download";
+      await downloadFile(id, name);
+    }
+  } else {
+    // 폴백: 새 탭 stagger
+    ids.forEach((id, i) => {
+      setTimeout(() => {
+        window.open(`/api/files/${encodeURIComponent(id)}/download`, "_blank");
+      }, i * 200);
+    });
+  }
 });
 
 bulkMoveBtn.addEventListener("click", () => {
@@ -888,6 +902,24 @@ function updateUploadOverlay(name, currentIndex, total, fileProgress) {
 function hideUploadOverlay() {
   if (!uploadOverlay) return;
   uploadOverlay.style.display = "none";
+}
+
+async function downloadFile(id, name) {
+  const url = `/api/files/${encodeURIComponent(id)}/download`;
+  if (window.showSaveFilePicker) {
+    try {
+      const handle = await window.showSaveFilePicker({ suggestedName: name });
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("download failed");
+      const writable = await handle.createWritable();
+      await res.body.pipeTo(writable);
+      return;
+    } catch (e) {
+      if (e && e.name === "AbortError") return;
+      // fall through to fallback download
+    }
+  }
+  window.open(url, "_blank");
 }
 
 function uploadFileWithProgress(fd, onProgress) {
