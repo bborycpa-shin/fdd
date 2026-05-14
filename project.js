@@ -466,6 +466,8 @@ function render(data) {
       }
     });
   });
+
+  updateActionBar();
 }
 
 function toggleFileSelected(id, selected) {
