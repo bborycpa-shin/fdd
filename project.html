@@ -25,33 +25,37 @@
       align-items: center;
       justify-content: center;
       color: #1d4ed8;
-      font-size: 20px;
+      font-size: 16px;
       font-weight: 600;
       z-index: 1000;
       pointer-events: none;
     }
+    #breadcrumb::-webkit-scrollbar { display: none; }
+    #breadcrumb { scrollbar-width: none; }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-900 min-h-screen">
-  <main class="max-w-md mx-auto px-4 py-6">
-    <a href="/" class="inline-flex items-center text-slate-600 active:text-slate-900 mb-3 text-sm">
+  <main class="max-w-md mx-auto px-3 py-4">
+    <a href="/" class="inline-flex items-center text-slate-600 active:text-slate-900 mb-2 text-xs">
       ← 프로젝트 목록
     </a>
 
-    <h1 id="project-name" class="text-2xl font-bold mb-2 break-words">불러오는 중...</h1>
+    <h1 id="project-name" class="text-base font-bold mb-1 truncate h-6">&nbsp;</h1>
 
-    <nav id="breadcrumb" class="text-sm text-slate-500 mb-5 flex flex-wrap items-center gap-1"></nav>
+    <nav id="breadcrumb" class="text-xs text-slate-500 mb-3 h-5 flex items-center gap-1 overflow-x-auto whitespace-nowrap">
+      <span>🏠</span>
+    </nav>
 
-    <div class="grid grid-cols-2 gap-2 mb-3">
+    <div class="grid grid-cols-2 gap-2 mb-2">
       <button
         id="new-folder-btn"
-        class="bg-white border border-slate-300 text-slate-900 font-medium rounded-2xl py-3 active:bg-slate-100 transition"
+        class="bg-white border border-slate-300 text-slate-900 text-sm font-medium rounded-xl py-2 active:bg-slate-100 transition"
       >
         + 새 폴더
       </button>
       <button
         id="upload-btn"
-        class="bg-blue-600 text-white font-medium rounded-2xl py-3 active:bg-blue-700 transition"
+        class="bg-blue-600 text-white text-sm font-medium rounded-xl py-2 active:bg-blue-700 transition"
       >
         ⬆ 파일 올리기
       </button>
@@ -59,10 +63,21 @@
 
     <input id="file-input" type="file" multiple class="hidden" />
 
-    <p id="upload-status" class="text-sm text-blue-600 mb-3 hidden text-center"></p>
+    <p id="upload-status" class="text-xs text-blue-600 mt-2 mb-1 hidden text-center"></p>
 
-    <div id="contents" class="space-y-2 mt-3">
-      <p class="text-slate-400 text-center py-8">불러오는 중...</p>
+    <div id="contents" class="space-y-1.5 mt-2">
+      <div class="flex items-center gap-2 px-3 py-2 bg-white rounded-xl border border-slate-200 animate-pulse">
+        <div class="w-8 h-8 rounded-lg bg-slate-200 shrink-0"></div>
+        <div class="flex-1 h-3.5 bg-slate-200 rounded"></div>
+      </div>
+      <div class="flex items-center gap-2 px-3 py-2 bg-white rounded-xl border border-slate-200 animate-pulse opacity-70">
+        <div class="w-8 h-8 rounded-lg bg-slate-200 shrink-0"></div>
+        <div class="flex-1 h-3.5 bg-slate-200 rounded"></div>
+      </div>
+      <div class="flex items-center gap-2 px-3 py-2 bg-white rounded-xl border border-slate-200 animate-pulse opacity-40">
+        <div class="w-8 h-8 rounded-lg bg-slate-200 shrink-0"></div>
+        <div class="flex-1 h-3.5 bg-slate-200 rounded"></div>
+      </div>
     </div>
   </main>
 

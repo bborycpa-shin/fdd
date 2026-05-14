@@ -95,7 +95,7 @@ async function load() {
     render(data);
   } catch (e) {
     contentsEl.innerHTML =
-      '<p class="text-red-500 text-center py-8">불러오기 실패</p>';
+      '<p class="text-red-500 text-center text-sm py-6">불러오기 실패</p>';
   }
 }
 
@@ -104,19 +104,19 @@ function render(data) {
   document.title = `${data.project.name} - 파일 공유`;
 
   const crumbs = [
-    `<a href="/project.html?id=${encodeURIComponent(data.project.id)}" class="active:text-slate-900">🏠</a>`,
+    `<a href="/project.html?id=${encodeURIComponent(data.project.id)}" class="active:text-slate-900 shrink-0">🏠</a>`,
   ];
   for (const c of data.breadcrumb) {
-    crumbs.push('<span class="text-slate-300">/</span>');
+    crumbs.push('<span class="text-slate-300 shrink-0">/</span>');
     crumbs.push(
-      `<a href="/project.html?id=${encodeURIComponent(data.project.id)}&folder=${encodeURIComponent(c.id)}" class="active:text-slate-900">${escapeHtml(c.name)}</a>`
+      `<a href="/project.html?id=${encodeURIComponent(data.project.id)}&folder=${encodeURIComponent(c.id)}" class="active:text-slate-900 shrink-0">${escapeHtml(c.name)}</a>`
     );
   }
   breadcrumbEl.innerHTML = crumbs.join(" ");
 
   if (data.folders.length === 0 && data.files.length === 0) {
     contentsEl.innerHTML =
-      '<p class="text-slate-400 text-center py-8">아직 비어있어요.<br>위 버튼으로 폴더를 만들거나 파일을 올려보세요!<br><span class="text-xs">PC에서는 화면에 파일을 끌어다 놓아도 돼요</span></p>';
+      '<p class="text-slate-400 text-center text-sm py-6">아직 비어있어요.<br>위 버튼으로 폴더를 만들거나 파일을 올려보세요!<br><span class="text-xs">PC에서는 화면에 파일을 끌어다 놓아도 돼요</span></p>';
     return;
   }
 
@@ -124,12 +124,12 @@ function render(data) {
 
   for (const f of data.folders) {
     items.push(`
-      <div class="bg-white rounded-2xl border border-slate-200 p-4 flex items-center gap-3">
-        <a href="/project.html?id=${encodeURIComponent(data.project.id)}&folder=${encodeURIComponent(f.id)}" class="flex-1 flex items-center gap-3 min-w-0 active:opacity-60 transition">
-          <span class="w-10 h-10 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center text-xl shrink-0">📁</span>
-          <span class="font-medium truncate">${escapeHtml(f.name)}</span>
+      <div class="flex items-center gap-2 px-3 py-2 bg-white rounded-xl border border-slate-200">
+        <a href="/project.html?id=${encodeURIComponent(data.project.id)}&folder=${encodeURIComponent(f.id)}" class="flex-1 flex items-center gap-2 min-w-0 active:opacity-60 transition">
+          <span class="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center text-base shrink-0">📁</span>
+          <span class="text-sm font-medium truncate">${escapeHtml(f.name)}</span>
         </a>
-        <button class="folder-delete text-slate-400 active:text-red-500 px-2 py-1 text-xl shrink-0" data-id="${f.id}" data-name="${escapeHtml(f.name)}" aria-label="폴더 삭제">🗑</button>
+        <button class="folder-delete text-slate-400 active:text-red-500 px-1.5 py-1 text-base shrink-0" data-id="${f.id}" data-name="${escapeHtml(f.name)}" aria-label="폴더 삭제">🗑</button>
       </div>
     `);
   }
@@ -137,15 +137,13 @@ function render(data) {
   for (const file of data.files) {
     const icon = getFileIcon(file.name);
     items.push(`
-      <div class="bg-white rounded-2xl border border-slate-200 p-4 flex items-center gap-3">
-        <a href="/api/files/${encodeURIComponent(file.id)}/download" class="flex-1 flex items-center gap-3 min-w-0 active:opacity-60 transition" target="_blank" rel="noopener">
-          <span class="w-10 h-10 rounded-lg ${icon.color} text-white flex items-center justify-center text-[10px] font-bold shrink-0">${icon.label}</span>
-          <div class="min-w-0 flex-1">
-            <p class="font-medium truncate">${escapeHtml(file.name)}</p>
-            <p class="text-xs text-slate-500">${formatSize(file.size)}</p>
-          </div>
+      <div class="flex items-center gap-2 px-3 py-2 bg-white rounded-xl border border-slate-200">
+        <a href="/api/files/${encodeURIComponent(file.id)}/download" class="flex-1 flex items-center gap-2 min-w-0 active:opacity-60 transition" target="_blank" rel="noopener">
+          <span class="w-8 h-8 rounded-lg ${icon.color} text-white flex items-center justify-center text-[9px] font-bold shrink-0">${icon.label}</span>
+          <span class="text-sm font-medium truncate flex-1">${escapeHtml(file.name)}</span>
+          <span class="text-xs text-slate-400 shrink-0">${formatSize(file.size)}</span>
         </a>
-        <button class="file-delete text-slate-400 active:text-red-500 px-2 py-1 text-xl shrink-0" data-id="${file.id}" data-name="${escapeHtml(file.name)}" aria-label="파일 삭제">🗑</button>
+        <button class="file-delete text-slate-400 active:text-red-500 px-1.5 py-1 text-base shrink-0" data-id="${file.id}" data-name="${escapeHtml(file.name)}" aria-label="파일 삭제">🗑</button>
       </div>
     `);
   }

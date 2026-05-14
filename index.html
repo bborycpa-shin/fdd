@@ -17,21 +17,32 @@
   </style>
 </head>
 <body class="bg-slate-50 text-slate-900 min-h-screen">
-  <main class="max-w-md mx-auto px-4 py-8">
-    <header class="mb-6">
-      <h1 class="text-2xl font-bold">📁 파일 공유</h1>
-      <p class="text-slate-500 text-sm mt-1">프로젝트별로 파일을 관리하세요</p>
+  <main class="max-w-md mx-auto px-3 py-5">
+    <header class="mb-4">
+      <h1 class="text-lg font-bold">📁 파일 공유</h1>
+      <p class="text-slate-500 text-xs mt-0.5">프로젝트별로 파일을 관리하세요</p>
     </header>
 
     <button
       id="new-project-btn"
-      class="w-full bg-blue-600 text-white font-medium rounded-2xl py-3 mb-6 active:bg-blue-700 transition"
+      class="w-full bg-blue-600 text-white text-sm font-medium rounded-xl py-2 mb-3 active:bg-blue-700 transition"
     >
       + 새 프로젝트
     </button>
 
-    <div id="project-list" class="space-y-2">
-      <p class="text-slate-400 text-center py-8">불러오는 중...</p>
+    <div id="project-list" class="space-y-1.5">
+      <div class="flex items-center gap-2 px-3 py-2 bg-white rounded-xl border border-slate-200 animate-pulse">
+        <div class="w-8 h-8 rounded-lg bg-slate-200 shrink-0"></div>
+        <div class="flex-1 h-3.5 bg-slate-200 rounded"></div>
+      </div>
+      <div class="flex items-center gap-2 px-3 py-2 bg-white rounded-xl border border-slate-200 animate-pulse opacity-70">
+        <div class="w-8 h-8 rounded-lg bg-slate-200 shrink-0"></div>
+        <div class="flex-1 h-3.5 bg-slate-200 rounded"></div>
+      </div>
+      <div class="flex items-center gap-2 px-3 py-2 bg-white rounded-xl border border-slate-200 animate-pulse opacity-40">
+        <div class="w-8 h-8 rounded-lg bg-slate-200 shrink-0"></div>
+        <div class="flex-1 h-3.5 bg-slate-200 rounded"></div>
+      </div>
     </div>
   </main>
 

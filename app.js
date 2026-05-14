@@ -12,33 +12,31 @@ function escapeHtml(str) {
 async function loadProjects() {
   try {
     const res = await fetch("/api/projects");
-    if (!res.ok) throw new Error("불러오기 실패");
+    if (!res.ok) throw new Error();
     const data = await res.json();
     renderProjects(data.projects || []);
   } catch (e) {
     projectList.innerHTML =
-      '<p class="text-red-500 text-center py-8">불러오기 실패</p>';
+      '<p class="text-red-500 text-center text-sm py-6">불러오기 실패</p>';
   }
 }
 
 function renderProjects(projects) {
   if (projects.length === 0) {
     projectList.innerHTML =
-      '<p class="text-slate-400 text-center py-8">아직 프로젝트가 없어요.<br>위 버튼을 눌러 만들어보세요!</p>';
+      '<p class="text-slate-400 text-center text-sm py-6">아직 프로젝트가 없어요.<br>위 버튼을 눌러 만들어보세요!</p>';
     return;
   }
 
   projectList.innerHTML = projects
     .map(
       (p) => `
-    <div class="bg-white rounded-2xl border border-slate-200 p-4 flex items-center justify-between">
-      <button class="project-open flex-1 text-left flex items-center gap-3" data-id="${p.id}">
-        <span class="text-2xl">📂</span>
-        <span class="font-medium">${escapeHtml(p.name)}</span>
+    <div class="flex items-center gap-2 px-3 py-2 bg-white rounded-xl border border-slate-200">
+      <button class="project-open flex-1 flex items-center gap-2 min-w-0 active:opacity-60 transition" data-id="${p.id}">
+        <span class="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center text-base shrink-0">📂</span>
+        <span class="text-sm font-medium truncate">${escapeHtml(p.name)}</span>
       </button>
-      <button class="project-delete text-slate-400 active:text-red-500 px-2 py-1 text-xl" data-id="${p.id}" data-name="${escapeHtml(p.name)}">
-        🗑
-      </button>
+      <button class="project-delete text-slate-400 active:text-red-500 px-1.5 py-1 text-base shrink-0" data-id="${p.id}" data-name="${escapeHtml(p.name)}" aria-label="프로젝트 삭제">🗑</button>
     </div>
   `
     )
