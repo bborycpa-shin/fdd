@@ -81,7 +81,26 @@ function applyBackground(project) {
   document.body.style.minHeight = "100vh";
 }
 
-applyBackground({ id: projectId });
+(function applyCachedBackground() {
+  let cachedIdx = null;
+  try {
+    const map = JSON.parse(
+      localStorage.getItem("fdd_project_colors") || "{}"
+    );
+    if (
+      map &&
+      Object.prototype.hasOwnProperty.call(map, projectId) &&
+      map[projectId] !== null
+    ) {
+      cachedIdx = map[projectId];
+    }
+  } catch {}
+  if (cachedIdx !== null) {
+    applyBackground({ id: projectId, color_index: cachedIdx });
+  } else {
+    applyBackground({ id: projectId });
+  }
+})();
 
 if (showAll) {
   newFolderBtn.disabled = true;
@@ -446,6 +465,13 @@ function renderRecentFiles(files) {
 
 function render(data) {
   document.title = `${data.project.name} - 파일 공유`;
+
+  try {
+    const map = JSON.parse(localStorage.getItem("fdd_project_colors") || "{}");
+    map[data.project.id] =
+      data.project.color_index === undefined ? null : data.project.color_index;
+    localStorage.setItem("fdd_project_colors", JSON.stringify(map));
+  } catch {}
 
   applyBackground(data.project);
   renderProjectImage(data);

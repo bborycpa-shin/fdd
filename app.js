@@ -82,6 +82,13 @@ async function loadProjects() {
     if (!res.ok) throw new Error();
     const data = await res.json();
     cachedProjects = data.projects || [];
+    try {
+      const colorMap = {};
+      cachedProjects.forEach((p) => {
+        colorMap[p.id] = p.color_index === undefined ? null : p.color_index;
+      });
+      localStorage.setItem("fdd_project_colors", JSON.stringify(colorMap));
+    } catch {}
     renderProjects(cachedProjects);
   } catch (e) {
     projectList.innerHTML =
