@@ -1,37 +1,7 @@
 const projectList = document.getElementById("project-list");
 const newProjectBtn = document.getElementById("new-project-btn");
-const sortBar = document.getElementById("sort-bar");
 
-let currentSort = "created_desc";
 let cachedProjects = null;
-
-function applySortChipStyles() {
-  sortBar.querySelectorAll(".sort-chip").forEach((chip) => {
-    const isCurrent = chip.dataset.sort === currentSort;
-    chip.className =
-      "sort-chip shrink-0 px-2.5 py-1 rounded-full border " +
-      (isCurrent
-        ? "bg-blue-600 text-white border-blue-600 font-semibold"
-        : "bg-white text-slate-700 border-slate-300 active:bg-slate-100");
-  });
-}
-
-sortBar.querySelectorAll(".sort-chip").forEach((chip) => {
-  chip.addEventListener("click", () => {
-    currentSort = chip.dataset.sort;
-    applySortChipStyles();
-    if (cachedProjects) renderProjects(cachedProjects);
-  });
-});
-applySortChipStyles();
-
-function escapeHtml(str) {
-  return String(str).replace(
-    /[&<>"']/g,
-    (c) =>
-      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])
-  );
-}
 
 const PROJECT_COLORS = [
   { bgFrom: "#eff6ff", bgTo: "#e0e7ff", grad: "from-blue-500 to-indigo-600" },
@@ -51,6 +21,14 @@ function projectColor(id) {
   return PROJECT_COLORS[hash % PROJECT_COLORS.length];
 }
 
+function escapeHtml(str) {
+  return String(str).replace(
+    /[&<>"']/g,
+    (c) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])
+  );
+}
+
 function formatDate(unixSec) {
   if (!unixSec) return "";
   const d = new Date(unixSec * 1000);
@@ -60,25 +38,6 @@ function formatDate(unixSec) {
   const hh = String(d.getHours()).padStart(2, "0");
   const mm = String(d.getMinutes()).padStart(2, "0");
   return `${y}.${m}.${day} ${hh}:${mm}`;
-}
-
-function sortProjects(projects, key) {
-  const arr = [...projects];
-  switch (key) {
-    case "created_desc":
-      arr.sort((a, b) => (b.created_at || 0) - (a.created_at || 0));
-      break;
-    case "created_asc":
-      arr.sort((a, b) => (a.created_at || 0) - (b.created_at || 0));
-      break;
-    case "name_asc":
-      arr.sort((a, b) => a.name.localeCompare(b.name, "ko"));
-      break;
-    case "name_desc":
-      arr.sort((a, b) => b.name.localeCompare(a.name, "ko"));
-      break;
-  }
-  return arr;
 }
 
 async function loadProjects() {
@@ -95,11 +54,13 @@ async function loadProjects() {
 }
 
 function renderProjects(projects) {
-  const sorted = sortProjects(projects, currentSort);
+  const sorted = [...projects].sort((a, b) =>
+    a.name.localeCompare(b.name, "ko")
+  );
 
   if (sorted.length === 0) {
     projectList.innerHTML =
-      '<div class="col-span-2"><p class="text-slate-400 text-center text-xs py-6">아직 프로젝트가 없어요.<br>위 버튼을 눌러 만들어보세요!</p></div>';
+      '<p class="text-slate-400 text-center text-xs py-6">아직 프로젝트가 없어요.<br>위 버튼을 눌러 만들어보세요!</p>';
     return;
   }
 
@@ -107,20 +68,18 @@ function renderProjects(projects) {
     .map((p) => {
       const color = projectColor(p.id);
       const iconHtml = p.has_image
-        ? `<img src="/api/projects/${encodeURIComponent(p.id)}/image" class="w-12 h-12 rounded-xl object-cover shadow-md bg-white" alt="${escapeHtml(p.name)}" />`
-        : `<div class="w-12 h-12 rounded-xl bg-gradient-to-br ${color.grad} text-white text-2xl flex items-center justify-center shadow-md">📁</div>`;
+        ? `<img src="/api/projects/${encodeURIComponent(p.id)}/image" class="block rounded-md shadow-sm shrink-0" alt="${escapeHtml(p.name)}" style="max-height:40px;max-width:64px;height:auto;width:auto;" />`
+        : `<div class="w-10 h-10 rounded-md bg-gradient-to-br ${color.grad} text-white text-lg flex items-center justify-center shadow-sm shrink-0">📁</div>`;
       return `
-    <div class="relative aspect-square rounded-2xl border border-white/60 shadow-sm active:scale-[0.97] transition-transform" style="background: linear-gradient(135deg, ${color.bgFrom}, ${color.bgTo})">
-      <button class="project-open block w-full h-full text-left p-3" data-id="${p.id}">
-        <div class="flex flex-col h-full justify-between">
-          ${iconHtml}
-          <div class="mt-2 min-w-0">
-            <p class="text-sm font-bold break-all leading-tight line-clamp-3 text-slate-900">${escapeHtml(p.name)}</p>
-            <p class="text-[10px] text-slate-500 mt-1">${formatDate(p.created_at)}</p>
-          </div>
+    <div class="flex items-center gap-2 px-3 py-2 rounded-xl border border-white/60 shadow-sm" style="background: linear-gradient(135deg, ${color.bgFrom}, ${color.bgTo})">
+      <button class="project-open flex-1 flex items-center gap-2.5 min-w-0 active:opacity-60 transition text-left" data-id="${p.id}">
+        ${iconHtml}
+        <div class="flex-1 min-w-0 leading-tight">
+          <p class="text-sm font-bold break-all text-slate-900">${escapeHtml(p.name)}</p>
+          <p class="text-[10px] text-slate-500 mt-0.5">${formatDate(p.created_at)}</p>
         </div>
       </button>
-      <button class="project-delete absolute top-1.5 right-1.5 text-slate-400 active:text-red-500 text-base px-1.5 py-1" data-id="${p.id}" data-name="${escapeHtml(p.name)}" aria-label="프로젝트 삭제">🗑</button>
+      <button class="project-delete text-slate-400 active:text-red-500 px-1.5 py-1 text-base shrink-0 self-center" data-id="${p.id}" data-name="${escapeHtml(p.name)}" aria-label="프로젝트 삭제">🗑</button>
     </div>
   `;
     })
