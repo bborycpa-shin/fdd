@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#1e40af"/>
+    </linearGradient>
+  </defs>
+  <rect width="100" height="100" rx="22" fill="url(#bg)"/>
+  <path d="M 22 38 L 42 38 L 48 32 L 72 32 C 76 32 78 34 78 38 L 78 66 C 78 70 76 72 72 72 L 28 72 C 24 72 22 70 22 66 Z" fill="white"/>
+  <path d="M 22 44 L 78 44 L 78 66 C 78 70 76 72 72 72 L 28 72 C 24 72 22 70 22 66 Z" fill="#dbeafe"/>
+  <text x="50" y="90" font-size="9" fill="white" text-anchor="middle" font-family="-apple-system,BlinkMacSystemFont,sans-serif" font-weight="700" letter-spacing="0.5">파일공유</text>
+</svg>

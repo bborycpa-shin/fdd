@@ -1,0 +1,19 @@
+{
+  "name": "파일공유(by신)",
+  "short_name": "파일공유(by신)",
+  "description": "팀 파일 공유 시스템",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#1e40af",
+  "lang": "ko",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

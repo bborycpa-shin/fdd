@@ -464,7 +464,7 @@ function renderRecentFiles(files) {
 }
 
 function render(data) {
-  document.title = `${data.project.name} - 파일 공유`;
+  document.title = `${data.project.name} · 파일공유(by신)`;
 
   try {
     const map = JSON.parse(localStorage.getItem("fdd_project_colors") || "{}");
