@@ -57,8 +57,19 @@
       body.needs-login > main,
       body.needs-login > #recent-files-bar,
       body.needs-login > #action-bar { visibility: hidden; }
-      .keypad-key { -webkit-tap-highlight-color: transparent; }
-      .keypad-key:active { transform: scale(0.96); background: #e2e8f0; }
+      .keypad-key {
+        -webkit-tap-highlight-color: transparent;
+        transition: transform 0.06s ease-out, background-color 0.06s, color 0.06s, box-shadow 0.06s;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
+      }
+      .keypad-key:active,
+      .keypad-key.pressed {
+        background: #2563eb !important;
+        color: white !important;
+        border-color: #2563eb !important;
+        transform: scale(0.92);
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
+      }
       .input-field.active { border-color: #2563eb !important; box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15); }
     `;
     document.head.appendChild(s);
@@ -477,9 +488,9 @@
     const wrap = document.createElement("div");
     wrap.id = "login-overlay";
     wrap.style.cssText =
-      "position:fixed;inset:0;background:#f8fafc;z-index:80;display:none;align-items:flex-start;justify-content:center;padding:18px;overflow-y:auto;";
+      "position:fixed;inset:0;background:#f8fafc;z-index:80;display:none;align-items:flex-start;justify-content:center;padding:28px;overflow-y:auto;";
     wrap.innerHTML = `
-      <div style="width:100%;max-width:320px;display:flex;flex-direction:column;align-items:center;">
+      <div style="width:100%;max-width:280px;display:flex;flex-direction:column;align-items:center;">
         <h1 style="font-size:16px;font-weight:700;margin:4px 0 6px 0;text-align:center;display:flex;align-items:baseline;gap:5px;">
           <span>📁 파일공유 시스템</span>
           <span style="font-size:9px;font-weight:400;color:#94a3b8;">by 신CPA</span>
@@ -563,6 +574,8 @@
       btn.style.cssText = "padding:9px 0;background:white;border:1px solid #cbd5e1;border-radius:8px;font-size:16px;font-weight:600;color:#0f172a;cursor:pointer;";
       btn.textContent = k;
       btn.addEventListener("click", () => {
+        btn.classList.add("pressed");
+        setTimeout(() => btn.classList.remove("pressed"), 110);
         errEl.textContent = "";
         if (k === "⌫") {
           if (activeField === "pw") {
