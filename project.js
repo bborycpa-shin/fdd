@@ -448,8 +448,8 @@ function renderRecentFiles(files) {
     .map((f) => {
       const icon = getFileIcon(f.name);
       const path = f.folder_path || "(루트)";
-      const uploader = f.uploader_label || f.uploader_access_code || "";
-      const uploaderLine = uploader ? ` · 👤 ${escapeHtml(uploader)}` : "";
+      const uploader = f.uploader_label || f.uploader_access_code || "관리자";
+      const uploaderLine = ` · 👤 ${escapeHtml(uploader)}`;
       return `
         <a href="/api/files/${encodeURIComponent(f.id)}/download" target="_blank" rel="noopener" class="flex items-center gap-1.5 px-1.5 py-1 bg-slate-50 active:bg-slate-200 rounded-md transition">
           <span class="w-5 h-5 rounded ${icon.color} text-white text-[6px] font-bold flex items-center justify-center shrink-0">${icon.label}</span>
@@ -493,10 +493,8 @@ function render(data) {
   const items = [];
 
   for (const f of folders) {
-    const creator = f.creator_label || f.creator_access_code || "";
-    const creatorLine = creator
-      ? ` · 👤 ${escapeHtml(creator)}`
-      : "";
+    const creator = f.creator_label || f.creator_access_code || "관리자";
+    const creatorLine = ` · 👤 ${escapeHtml(creator)}`;
     items.push(`
       <div class="flex items-center gap-1.5 px-2 py-1 bg-amber-50 rounded-lg border border-amber-200">
         <a href="/project.html?id=${encodeURIComponent(data.project.id)}&folder=${encodeURIComponent(f.id)}" class="flex-1 flex items-center gap-1.5 min-w-0 active:opacity-60 transition">
@@ -520,8 +518,8 @@ function render(data) {
     const pathLine = showAll && file.folder_path
       ? `<p class="text-[9px] text-blue-600/80 mt-0.5">📁 ${escapeHtml(file.folder_path)}</p>`
       : (showAll ? `<p class="text-[9px] text-slate-400 mt-0.5">📁 (루트)</p>` : "");
-    const uploader = file.uploader_label || file.uploader_access_code || "";
-    const uploaderLine = uploader ? ` · 👤 ${escapeHtml(uploader)}` : "";
+    const uploader = file.uploader_label || file.uploader_access_code || "관리자";
+    const uploaderLine = ` · 👤 ${escapeHtml(uploader)}`;
     const isSameCode =
       myAccessCode &&
       file.uploader_access_code &&

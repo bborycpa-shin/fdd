@@ -37,7 +37,7 @@
     const headers = new Headers(init.headers || {});
     if (storedAdminPw) headers.set("X-Admin-Password", storedAdminPw);
     if (storedUserPw) headers.set("X-User-Password", storedUserPw);
-    if (storedAccessCode) headers.set("X-Access-Code", storedAccessCode);
+    if (storedAccessCode && !isAdmin) headers.set("X-Access-Code", storedAccessCode);
     if (uploaderId) headers.set("X-Uploader-Id", uploaderId);
     init.headers = headers;
     return origFetch(input, init);
