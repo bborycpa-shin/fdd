@@ -451,7 +451,7 @@ function renderRecentFiles(files) {
       const uploader = f.uploader_label || f.uploader_access_code || "관리자";
       const uploaderLine = ` · 👤 ${escapeHtml(uploader)}`;
       return `
-        <a href="/api/files/${encodeURIComponent(f.id)}/download" target="_blank" rel="noopener" class="flex items-center gap-1.5 px-1.5 py-1 bg-slate-50 active:bg-slate-200 rounded-md transition">
+        <a href="/api/files/${encodeURIComponent(f.id)}/download" target="_blank" rel="noopener" class="recent-download flex items-center gap-1.5 px-1.5 py-1 bg-slate-50 active:bg-slate-200 rounded-md transition">
           <span class="w-5 h-5 rounded ${icon.color} text-white text-[6px] font-bold flex items-center justify-center shrink-0">${icon.label}</span>
           <div class="flex-1 min-w-0 leading-tight">
             <p class="text-[10px] font-medium truncate text-slate-800">${escapeHtml(f.name)}</p>
@@ -461,6 +461,15 @@ function renderRecentFiles(files) {
       `;
     })
     .join("");
+
+  if (isKakaoInApp()) {
+    recentFilesList.querySelectorAll(".recent-download").forEach((a) => {
+      a.addEventListener("click", (e) => {
+        e.preventDefault();
+        openInExternalBrowser(a.getAttribute("href"));
+      });
+    });
+  }
 }
 
 function render(data) {
@@ -690,10 +699,11 @@ function updateSelectAllChip(currentFiles) {
     fileIds.length > 0 && fileIds.every((id) => selectedFileIds.has(id));
   selectAllBtn.innerHTML = allSelected ? "☑ 전체" : "☐ 전체";
   selectAllBtn.className =
-    "shrink-0 px-1.5 py-0.5 rounded-full border " +
+    "shrink-0 px-1.5 py-0.5 rounded-full border font-semibold inline-flex items-center justify-center " +
     (allSelected
-      ? "bg-blue-600 text-white border-blue-600 font-semibold"
+      ? "bg-blue-600 text-white border-blue-600"
       : "bg-white text-slate-700 border-slate-300 active:bg-slate-100");
+  selectAllBtn.style.minWidth = "52px";
 }
 
 selectAllBtn.addEventListener("click", () => {
@@ -757,6 +767,10 @@ bulkDownloadBtn.addEventListener("click", async () => {
   if (ids.length > 5) {
     if (!confirm(`${ids.length}개를 한 번에 받으면 브라우저가 일부를 막을 수 있어요. 계속할까요?`))
       return;
+  }
+  if (isKakaoInApp()) {
+    openInExternalBrowser(window.location.href);
+    return;
   }
   if (window.showSaveFilePicker) {
     // 지원 브라우저: 파일마다 저장 위치 선택. 취소하면 중단
@@ -904,8 +918,33 @@ function hideUploadOverlay() {
   uploadOverlay.style.display = "none";
 }
 
+function isKakaoInApp() {
+  return /KAKAOTALK/i.test(navigator.userAgent || "");
+}
+function isIOSDevice() {
+  const ua = navigator.userAgent || "";
+  return /iPhone|iPad|iPod/i.test(ua);
+}
+function openInExternalBrowser(path) {
+  const absolute = path.startsWith("http")
+    ? path
+    : window.location.origin + path;
+  if (isIOSDevice()) {
+    alert(
+      "카카오톡 안에서는 파일 다운로드가 안 돼요.\n\n화면 아래쪽 메뉴에서 '다른 브라우저로 열기' 또는 'Safari로 열기'를 눌러주세요."
+    );
+    return;
+  }
+  window.location.href =
+    "kakaotalk://web/openExternal?url=" + encodeURIComponent(absolute);
+}
+
 async function downloadFile(id, name) {
   const url = `/api/files/${encodeURIComponent(id)}/download`;
+  if (isKakaoInApp()) {
+    openInExternalBrowser(url);
+    return;
+  }
   if (window.showSaveFilePicker) {
     try {
       const handle = await window.showSaveFilePicker({ suggestedName: name });
