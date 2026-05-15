@@ -54,7 +54,7 @@
     <div style="font-weight:700;font-size:16px;">세로 모드로 사용해주세요</div>
     <div style="font-size:12px;opacity:0.8;">기기를 세로로 돌려주세요</div>
   </div>
-  <main class="max-w-md mx-auto px-3 py-3">
+  <main class="max-w-md mx-auto px-3 py-3" style="padding-bottom: calc(30vh + 16px);">
     <div id="auth-status-slot" style="min-height:24px;"></div>
     <header class="flex items-center justify-between mb-3">
       <h1 class="text-lg font-bold flex items-baseline gap-1.5">
@@ -114,16 +114,23 @@
       </div>
     </div>
 
-    <section class="mt-5 pt-3 border-t border-slate-200">
-      <h2 class="text-xs font-bold text-slate-500 mb-2 flex items-center gap-1.5">
+  </main>
+
+  <div
+    id="recent-files-bar"
+    class="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-slate-300 z-30 shadow-[0_-4px_12px_rgba(0,0,0,0.08)]"
+    style="height: 30vh; padding-bottom: env(safe-area-inset-bottom);"
+  >
+    <div class="max-w-md mx-auto px-3 pt-2 pb-1 h-full flex flex-col">
+      <h3 class="text-[10px] font-bold text-slate-500 mb-1 shrink-0 flex items-center gap-1">
         <span>📌 최근 등록된 파일</span>
-        <span class="text-[10px] font-normal text-slate-400">(권한 범위 내)</span>
-      </h2>
-      <div id="home-recent-files" class="space-y-1">
+        <span class="font-normal text-slate-400">(권한 범위 내)</span>
+      </h3>
+      <div id="home-recent-files" class="flex-1 overflow-y-auto space-y-1 pr-0.5">
         <p class="text-[10px] text-slate-400 text-center py-3">불러오는 중...</p>
       </div>
-    </section>
-  </main>
+    </div>
+  </div>
 
   <div id="edit-modal" class="fixed inset-0 bg-black/50 z-50 hidden items-end sm:items-center justify-center p-3" style="display: none;">
     <div class="bg-white rounded-2xl p-4 w-full max-w-md flex flex-col">
