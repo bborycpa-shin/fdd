@@ -20,9 +20,40 @@
     }
     input, button, select { font-size: 16px; }
     select { font-size: 12px; }
+    #rotate-warning {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: #0f172a;
+      color: white;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 12px;
+      text-align: center;
+      padding: 24px;
+      font-size: 14px;
+    }
+    #rotate-warning .icon {
+      font-size: 56px;
+      animation: rotateHint 2s ease-in-out infinite;
+    }
+    @keyframes rotateHint {
+      0%, 100% { transform: rotate(-90deg); }
+      50% { transform: rotate(0deg); }
+    }
+    @media screen and (max-width: 932px) and (orientation: landscape) {
+      #rotate-warning { display: flex; }
+    }
   </style>
 </head>
 <body class="bg-slate-50 text-slate-900 min-h-screen">
+  <div id="rotate-warning">
+    <div class="icon">📱</div>
+    <div style="font-weight:700;font-size:16px;">세로 모드로 사용해주세요</div>
+    <div style="font-size:12px;opacity:0.8;">기기를 세로로 돌려주세요</div>
+  </div>
   <main class="max-w-md mx-auto px-3 py-3">
     <div id="auth-status-slot" style="min-height:24px;"></div>
     <header class="flex items-center justify-between mb-3">
@@ -82,6 +113,16 @@
         </div>
       </div>
     </div>
+
+    <section class="mt-5 pt-3 border-t border-slate-200">
+      <h2 class="text-xs font-bold text-slate-500 mb-2 flex items-center gap-1.5">
+        <span>📌 최근 등록된 파일</span>
+        <span class="text-[10px] font-normal text-slate-400">(권한 범위 내)</span>
+      </h2>
+      <div id="home-recent-files" class="space-y-1">
+        <p class="text-[10px] text-slate-400 text-center py-3">불러오는 중...</p>
+      </div>
+    </section>
   </main>
 
   <div id="edit-modal" class="fixed inset-0 bg-black/50 z-50 hidden items-end sm:items-center justify-center p-3" style="display: none;">

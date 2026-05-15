@@ -882,6 +882,14 @@
     });
   }
 
+  function tryLockPortrait() {
+    try {
+      if (screen && screen.orientation && typeof screen.orientation.lock === "function") {
+        screen.orientation.lock("portrait").catch(() => {});
+      }
+    } catch {}
+  }
+
   injectStyles();
   injectNavBar();
   injectLockButton();
@@ -889,6 +897,7 @@
   injectAdminModal();
   injectLoginOverlay();
   refreshStatus();
+  tryLockPortrait();
 
   window.fddAdmin = {
     isAdmin: () => isAdmin,

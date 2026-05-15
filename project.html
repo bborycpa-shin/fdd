@@ -42,9 +42,40 @@
       outline-offset: 3px;
       border-radius: 12px;
     }
+    #rotate-warning {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: #0f172a;
+      color: white;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 12px;
+      text-align: center;
+      padding: 24px;
+      font-size: 14px;
+    }
+    #rotate-warning .icon {
+      font-size: 56px;
+      animation: rotateHint 2s ease-in-out infinite;
+    }
+    @keyframes rotateHint {
+      0%, 100% { transform: rotate(-90deg); }
+      50% { transform: rotate(0deg); }
+    }
+    @media screen and (max-width: 932px) and (orientation: landscape) {
+      #rotate-warning { display: flex; }
+    }
   </style>
 </head>
 <body class="text-slate-900">
+  <div id="rotate-warning">
+    <div class="icon">📱</div>
+    <div style="font-weight:700;font-size:16px;">세로 모드로 사용해주세요</div>
+    <div style="font-size:12px;opacity:0.8;">기기를 세로로 돌려주세요</div>
+  </div>
   <main class="max-w-md mx-auto px-3 py-3" style="padding-bottom: calc(22vh + 12px);">
     <div id="auth-status-slot" style="min-height:24px;"></div>
     <div class="bg-white rounded-xl shadow-sm border border-slate-200 px-2 py-2 mb-3 flex items-center gap-1" style="min-height:46px;">

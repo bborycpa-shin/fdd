@@ -41,6 +41,33 @@ export async function onRequestGet({ params, request, env, data }) {
 
   const folderMapForPath = new Map();
   (allFolders || []).forEach((f) => folderMapForPath.set(f.id, f));
+
+  const { results: folderSizeRows } = await env.DB.prepare(
+    "SELECT folder_id, COALESCE(SUM(size), 0) AS s FROM files WHERE project_id = ? AND folder_id IS NOT NULL GROUP BY folder_id"
+  )
+    .bind(projectId)
+    .all();
+  const directFolderSize = new Map();
+  (folderSizeRows || []).forEach((r) => {
+    directFolderSize.set(r.folder_id, Number(r.s) || 0);
+  });
+
+  const childrenByParent = new Map();
+  (allFolders || []).forEach((f) => {
+    const pid = f.parent_folder_id || null;
+    if (!childrenByParent.has(pid)) childrenByParent.set(pid, []);
+    childrenByParent.get(pid).push(f.id);
+  });
+  const totalFolderSize = new Map();
+  function computeFolderSize(fid) {
+    if (totalFolderSize.has(fid)) return totalFolderSize.get(fid);
+    let sum = directFolderSize.get(fid) || 0;
+    const kids = childrenByParent.get(fid) || [];
+    for (const k of kids) sum += computeFolderSize(k);
+    totalFolderSize.set(fid, sum);
+    return sum;
+  }
+  (allFolders || []).forEach((f) => computeFolderSize(f.id));
   function buildFolderPath(fid) {
     const parts = [];
     let cur = folderMapForPath.get(fid);
@@ -115,7 +142,7 @@ export async function onRequestGet({ params, request, env, data }) {
     }
   }
 
-  const folders = folderId
+  const folderRows = folderId
     ? (
         await env.DB.prepare(
           "SELECT f.id, f.name, f.created_at, f.creator_access_code, ac.label as creator_label FROM folders f LEFT JOIN access_codes ac ON f.creator_access_code = ac.code WHERE f.project_id = ? AND f.parent_folder_id = ? ORDER BY f.name"
@@ -130,6 +157,10 @@ export async function onRequestGet({ params, request, env, data }) {
           .bind(projectId)
           .all()
       ).results;
+  const folders = (folderRows || []).map((f) => ({
+    ...f,
+    size: totalFolderSize.get(f.id) || 0,
+  }));
 
   const files = folderId
     ? (

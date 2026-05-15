@@ -76,6 +76,70 @@ function formatDate(unixSec) {
   return `${y}.${m}.${day} ${hh}:${mm}`;
 }
 
+function isToday(unixSec) {
+  if (!unixSec) return false;
+  const d = new Date(unixSec * 1000);
+  const n = new Date();
+  return (
+    d.getFullYear() === n.getFullYear() &&
+    d.getMonth() === n.getMonth() &&
+    d.getDate() === n.getDate()
+  );
+}
+
+function dateHtml(unixSec, baseColorClass) {
+  if (!unixSec) return "";
+  const txt = formatDate(unixSec);
+  if (isToday(unixSec)) {
+    return `<span class="text-red-600 font-bold">${txt} (오늘)</span>`;
+  }
+  return baseColorClass
+    ? `<span class="${baseColorClass}">${txt}</span>`
+    : txt;
+}
+
+function formatSize(bytes) {
+  if (!bytes || bytes <= 0) return "0 B";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  if (bytes < 1024 * 1024 * 1024)
+    return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  return `${(bytes / 1024 / 1024 / 1024).toFixed(2)} GB`;
+}
+
+const HOME_FILE_ICON_MAP = {
+  xlsx: { color: "bg-emerald-600", label: "XLS" },
+  xls: { color: "bg-emerald-600", label: "XLS" },
+  csv: { color: "bg-emerald-600", label: "CSV" },
+  doc: { color: "bg-blue-600", label: "DOC" },
+  docx: { color: "bg-blue-600", label: "DOC" },
+  ppt: { color: "bg-orange-500", label: "PPT" },
+  pptx: { color: "bg-orange-500", label: "PPT" },
+  pdf: { color: "bg-red-600", label: "PDF" },
+  hwp: { color: "bg-sky-700", label: "HWP" },
+  hwpx: { color: "bg-sky-700", label: "HWP" },
+  jpg: { color: "bg-purple-500", label: "JPG" },
+  jpeg: { color: "bg-purple-500", label: "JPG" },
+  png: { color: "bg-purple-500", label: "PNG" },
+  gif: { color: "bg-purple-500", label: "GIF" },
+  webp: { color: "bg-purple-500", label: "WEBP" },
+  heic: { color: "bg-purple-500", label: "HEIC" },
+  mp4: { color: "bg-pink-500", label: "MP4" },
+  mov: { color: "bg-pink-500", label: "MOV" },
+  mp3: { color: "bg-yellow-500", label: "MP3" },
+  zip: { color: "bg-amber-600", label: "ZIP" },
+  txt: { color: "bg-slate-500", label: "TXT" },
+};
+function getHomeFileIcon(name) {
+  const parts = String(name).split(".");
+  const ext = parts.length > 1 ? parts.pop().toLowerCase() : "";
+  if (HOME_FILE_ICON_MAP[ext]) return HOME_FILE_ICON_MAP[ext];
+  return {
+    color: "bg-slate-400",
+    label: (ext || "FILE").toUpperCase().slice(0, 4),
+  };
+}
+
 async function loadProjects() {
   try {
     const res = await fetch("/api/projects");
@@ -122,6 +186,11 @@ function renderProjects(projects) {
       const numBadge = p.display_number
         ? `<span class="shrink-0 inline-flex items-center justify-center min-w-[22px] h-[18px] px-1 rounded bg-white/80 border border-slate-300 text-[10px] font-bold text-slate-700">#${p.display_number}</span>`
         : "";
+      const fileCount = p.file_count || 0;
+      const totalSize = p.total_size || 0;
+      const sizeBadge = fileCount > 0
+        ? `<span class="inline-flex items-center gap-1 text-[10px] text-slate-600 bg-white/70 border border-slate-200 rounded px-1.5 py-px"><span>💾</span><span class="font-semibold">${formatSize(totalSize)}</span><span class="text-slate-400">· ${fileCount}개</span></span>`
+        : `<span class="text-[10px] text-slate-400">파일 없음</span>`;
       return `
     <div class="project-row flex items-center gap-1 px-2 py-2 rounded-xl border border-white/60 shadow-sm" data-id="${p.id}" style="background: linear-gradient(135deg, ${color.bgFrom}, ${color.bgTo})">
       <span class="drag-handle admin-only shrink-0 inline-flex items-center justify-center w-5 text-slate-500 text-base select-none" style="cursor:grab;touch-action:none;" title="드래그하여 순서 변경" aria-hidden="true">⋮⋮</span>
@@ -129,7 +198,10 @@ function renderProjects(projects) {
         ${iconHtml}
         <div class="flex-1 min-w-0 leading-tight">
           <div class="flex items-center gap-1.5 min-w-0">${numBadge}<p class="text-sm font-bold break-all text-slate-900 min-w-0">${escapeHtml(p.name)}</p></div>
-          <p class="text-[10px] text-slate-500 mt-0.5">${formatDate(p.created_at)}</p>
+          <div class="flex items-center gap-1.5 mt-0.5 flex-wrap">
+            <p class="text-[10px] text-slate-500">${dateHtml(p.created_at, "text-slate-500")}</p>
+            ${sizeBadge}
+          </div>
         </div>
       </button>
       <button class="project-edit admin-only text-slate-400 active:text-blue-600 px-1 py-1 text-sm shrink-0 self-center" data-id="${p.id}" aria-label="프로젝트 수정">✏</button>
@@ -298,6 +370,7 @@ newProjectBtn.addEventListener("click", async () => {
 
 loadProjects();
 loadNotice();
+loadHomeRecentFiles();
 
 const noticeEl = document.getElementById("home-notice");
 const noticeEditBtn = document.getElementById("notice-edit-btn");
@@ -359,4 +432,61 @@ if (noticeSave) {
       alert("저장 실패");
     }
   });
+}
+
+async function loadHomeRecentFiles() {
+  const wrap = document.getElementById("home-recent-files");
+  if (!wrap) return;
+  try {
+    const res = await fetch("/api/recent-files?limit=15");
+    if (!res.ok) {
+      wrap.innerHTML =
+        '<p class="text-[10px] text-slate-400 text-center py-3">불러올 수 없어요</p>';
+      return;
+    }
+    const data = await res.json();
+    renderHomeRecentFiles(data.files || []);
+  } catch {
+    wrap.innerHTML =
+      '<p class="text-[10px] text-slate-400 text-center py-3">불러올 수 없어요</p>';
+  }
+}
+
+function renderHomeRecentFiles(files) {
+  const wrap = document.getElementById("home-recent-files");
+  if (!wrap) return;
+  if (!files || files.length === 0) {
+    wrap.innerHTML =
+      '<p class="text-[10px] text-slate-400 text-center py-3">최근 등록된 파일이 없어요</p>';
+    return;
+  }
+  wrap.innerHTML = files
+    .map((f) => {
+      const icon = getHomeFileIcon(f.name);
+      const projectColor = projectColorByHash(f.project_id);
+      const colorObj =
+        f.project_color_index !== null && f.project_color_index !== undefined
+          ? PROJECT_COLORS[f.project_color_index] || projectColor
+          : projectColor;
+      const projTag = `<span class="inline-flex items-center gap-0.5 text-[9px] font-semibold text-slate-700 rounded px-1 py-px border border-white/70" style="background: linear-gradient(135deg, ${colorObj.bgFrom}, ${colorObj.bgTo})">${f.project_display_number ? "#" + f.project_display_number + " " : ""}${escapeHtml(f.project_name || "")}</span>`;
+      const path = f.folder_path ? `📁 ${escapeHtml(f.folder_path)}` : "📁 (루트)";
+      const uploader = f.uploader_label || f.uploader_access_code || "관리자";
+      const dateStr = isToday(f.uploaded_at)
+        ? `<span class="text-red-600 font-bold">${formatDate(f.uploaded_at)} (오늘)</span>`
+        : `<span class="text-slate-400">${formatDate(f.uploaded_at)}</span>`;
+      return `
+        <a href="/project.html?id=${encodeURIComponent(f.project_id)}${f.folder_id ? "&folder=" + encodeURIComponent(f.folder_id) : ""}" class="flex items-center gap-1.5 px-2 py-1.5 bg-white border border-slate-200 rounded-lg active:bg-slate-50 transition">
+          <span class="w-7 h-7 rounded ${icon.color} text-white text-[8px] font-bold flex items-center justify-center shrink-0">${icon.label}</span>
+          <div class="flex-1 min-w-0 leading-tight">
+            <p class="text-[11px] font-medium truncate text-slate-800">${escapeHtml(f.name)}</p>
+            <div class="flex items-center gap-1 flex-wrap mt-0.5">
+              ${projTag}
+              <span class="text-[9px] text-slate-500 truncate">${path}</span>
+            </div>
+            <p class="text-[9px] mt-0.5">${dateStr} <span class="text-slate-400">· ${formatSize(f.size)} · 👤 ${escapeHtml(uploader)}</span></p>
+          </div>
+        </a>
+      `;
+    })
+    .join("");
 }

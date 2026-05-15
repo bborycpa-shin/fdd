@@ -180,9 +180,12 @@ function escapeHtml(str) {
 }
 
 function formatSize(bytes) {
+  if (!bytes || bytes <= 0) return "0 B";
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  if (bytes < 1024 * 1024 * 1024)
+    return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
+  return `${(bytes / 1024 / 1024 / 1024).toFixed(2)} GB`;
 }
 
 function formatDate(unixSec) {
@@ -194,6 +197,26 @@ function formatDate(unixSec) {
   const hh = String(d.getHours()).padStart(2, "0");
   const mm = String(d.getMinutes()).padStart(2, "0");
   return `${y}.${m}.${day} ${hh}:${mm}`;
+}
+
+function isToday(unixSec) {
+  if (!unixSec) return false;
+  const d = new Date(unixSec * 1000);
+  const n = new Date();
+  return (
+    d.getFullYear() === n.getFullYear() &&
+    d.getMonth() === n.getMonth() &&
+    d.getDate() === n.getDate()
+  );
+}
+
+function formatDateHtml(unixSec) {
+  if (!unixSec) return "";
+  const txt = formatDate(unixSec);
+  if (isToday(unixSec)) {
+    return `<span class="text-red-600 font-bold">${txt} (오늘)</span>`;
+  }
+  return txt;
 }
 
 let currentSort = "created_desc";
@@ -259,8 +282,10 @@ function renderTree(data) {
   const isRoot = !currentId && !showAll;
 
   const projectChip = `
-    <a href="/project.html?id=${pid}" class="inline-flex items-center px-2.5 py-0.5 rounded-full border transition ${isRoot ? "bg-blue-600 text-white border-blue-600 font-semibold" : "bg-white text-slate-700 border-slate-300 active:bg-slate-100"}">
-      ${escapeHtml(data.project.name)}
+    <a href="/project.html?id=${pid}" class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full border transition ${isRoot ? "bg-blue-600 text-white border-blue-600 font-semibold" : "bg-white text-slate-700 border-slate-300 active:bg-slate-100"}">
+      <span aria-hidden="true">🏠</span>
+      <span class="text-[10px] ${isRoot ? "text-white/80" : "text-slate-400"}">최상위</span>
+      <span>${escapeHtml(data.project.name)}</span>
     </a>
   `;
   const allFilesChip = `
@@ -455,7 +480,7 @@ function renderRecentFiles(files) {
           <span class="w-5 h-5 rounded ${icon.color} text-white text-[6px] font-bold flex items-center justify-center shrink-0">${icon.label}</span>
           <div class="flex-1 min-w-0 leading-tight">
             <p class="text-[10px] font-medium truncate text-slate-800">${escapeHtml(f.name)}</p>
-            <p class="text-[8px] text-slate-400 truncate">📁 ${escapeHtml(path)} · ${formatDate(f.uploaded_at)}${uploaderLine}</p>
+            <p class="text-[8px] text-slate-400 truncate">📁 ${escapeHtml(path)} · ${formatDateHtml(f.uploaded_at)}${uploaderLine}</p>
           </div>
         </a>
       `;
@@ -504,13 +529,16 @@ function render(data) {
   for (const f of folders) {
     const creator = f.creator_label || f.creator_access_code || "관리자";
     const creatorLine = ` · 👤 ${escapeHtml(creator)}`;
+    const sizeLine = f.size > 0
+      ? ` · 💾 ${formatSize(f.size)}`
+      : ` · 💾 비어있음`;
     items.push(`
       <div class="flex items-center gap-1.5 px-2 py-1 bg-amber-50 rounded-lg border border-amber-200">
         <a href="/project.html?id=${encodeURIComponent(data.project.id)}&folder=${encodeURIComponent(f.id)}" class="flex-1 flex items-center gap-1.5 min-w-0 active:opacity-60 transition">
           <span class="w-6 h-6 rounded bg-amber-200 text-amber-800 flex items-center justify-center text-xs shrink-0">📁</span>
           <div class="flex-1 min-w-0 leading-tight">
             <p class="text-[11px] font-medium break-all text-amber-950">${escapeHtml(f.name)}</p>
-            <p class="text-[9px] text-amber-700/70 mt-0.5">${formatDate(f.created_at)}${creatorLine}</p>
+            <p class="text-[9px] text-amber-700/70 mt-0.5">${formatDateHtml(f.created_at)}${creatorLine}${sizeLine}</p>
           </div>
         </a>
         <button class="folder-zip text-amber-600/70 active:text-blue-600 px-1 py-0.5 text-sm shrink-0 self-center" data-id="${f.id}" data-name="${escapeHtml(f.name)}" aria-label="폴더 ZIP 다운로드" title="ZIP으로 받기">📦</button>
@@ -544,7 +572,7 @@ function render(data) {
           <span class="w-6 h-6 rounded ${icon.color} text-white flex items-center justify-center text-[7px] font-bold shrink-0 mt-0.5">${icon.label}</span>
           <div class="flex-1 min-w-0 leading-tight">
             <p class="text-[11px] font-medium break-all">${escapeHtml(file.name)}</p>
-            <p class="text-[9px] text-slate-400 mt-0.5">${formatSize(file.size)} · ${formatDate(file.uploaded_at)}${uploaderLine}</p>
+            <p class="text-[9px] text-slate-400 mt-0.5">${formatSize(file.size)} · ${formatDateHtml(file.uploaded_at)}${uploaderLine}</p>
             ${pathLine}
           </div>
         </div>
