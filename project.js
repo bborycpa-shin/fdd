@@ -513,6 +513,7 @@ function render(data) {
             <p class="text-[9px] text-amber-700/70 mt-0.5">${formatDate(f.created_at)}${creatorLine}</p>
           </div>
         </a>
+        <button class="folder-zip text-amber-600/70 active:text-blue-600 px-1 py-0.5 text-sm shrink-0 self-center" data-id="${f.id}" data-name="${escapeHtml(f.name)}" aria-label="폴더 ZIP 다운로드" title="ZIP으로 받기">📦</button>
         <button class="folder-rename admin-only text-amber-600/70 active:text-blue-600 px-1 py-0.5 text-sm shrink-0 self-center" data-id="${f.id}" data-name="${escapeHtml(f.name)}" aria-label="폴더 이름 바꾸기">✏</button>
         <button class="folder-delete admin-only text-amber-600/70 active:text-red-500 px-1 py-0.5 text-sm shrink-0 self-center" data-id="${f.id}" data-name="${escapeHtml(f.name)}" aria-label="폴더 삭제">🗑</button>
       </div>
@@ -547,6 +548,9 @@ function render(data) {
             ${pathLine}
           </div>
         </div>
+        ${isViewable(file.name, file.content_type)
+          ? `<button class="file-view text-slate-400 active:text-blue-600 px-1 py-0.5 text-sm shrink-0 self-center" data-id="${file.id}" aria-label="보기">👁</button>`
+          : ""}
         <button class="file-download text-slate-400 active:text-blue-600 px-1 py-0.5 text-sm shrink-0 self-center" data-id="${file.id}" data-name="${escapeHtml(file.name)}" aria-label="다운로드">⬇</button>
         <button class="file-rename admin-only text-slate-400 active:text-blue-600 px-1 py-0.5 text-sm shrink-0 self-center" data-id="${file.id}" data-name="${escapeHtml(file.name)}" aria-label="이름 바꾸기">✏</button>
         <button class="file-delete ${deleteClass} text-slate-400 active:text-red-500 px-1 py-0.5 text-sm shrink-0 self-center" data-id="${file.id}" data-name="${escapeHtml(file.name)}" aria-label="파일 삭제">🗑</button>
@@ -600,6 +604,21 @@ function render(data) {
       const id = btn.dataset.id;
       const name = btn.dataset.name || "";
       await downloadFile(id, name);
+    });
+  });
+
+  contentsEl.querySelectorAll(".file-view").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      viewFile(btn.dataset.id);
+    });
+  });
+
+  contentsEl.querySelectorAll(".folder-zip").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      downloadFolderZip(btn.dataset.id, btn.dataset.name);
     });
   });
 
@@ -920,6 +939,48 @@ function hideUploadOverlay() {
 
 function isKakaoInApp() {
   return /KAKAOTALK/i.test(navigator.userAgent || "");
+}
+const VIEWABLE_EXT = new Set([
+  "jpg", "jpeg", "png", "gif", "webp", "svg", "bmp", "heic",
+  "pdf",
+  "txt", "csv", "md", "log", "json", "xml", "html", "htm", "js", "css",
+  "mp4", "webm", "mov",
+  "mp3", "wav", "ogg", "m4a",
+]);
+function isViewable(name, contentType) {
+  const ct = (contentType || "").toLowerCase();
+  if (
+    ct.startsWith("image/") ||
+    ct.startsWith("video/") ||
+    ct.startsWith("audio/") ||
+    ct.startsWith("text/") ||
+    ct === "application/pdf" ||
+    ct === "application/json"
+  )
+    return true;
+  const ext = (name.split(".").pop() || "").toLowerCase();
+  return VIEWABLE_EXT.has(ext);
+}
+function viewFile(id) {
+  const url = `/api/files/${encodeURIComponent(id)}/view`;
+  if (isKakaoInApp()) {
+    openInExternalBrowser(url);
+    return;
+  }
+  window.open(url, "_blank", "noopener");
+}
+function downloadFolderZip(id, name) {
+  const url = `/api/folders/${encodeURIComponent(id)}/zip`;
+  if (isKakaoInApp()) {
+    openInExternalBrowser(url);
+    return;
+  }
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${name}.zip`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 }
 function isIOSDevice() {
   const ua = navigator.userAgent || "";

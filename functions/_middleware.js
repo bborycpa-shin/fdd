@@ -154,6 +154,21 @@ async function ensureMigrations(env) {
       ]);
     }
 
+    const noticeRow = await env.DB.prepare(
+      "SELECT value FROM settings WHERE key = ?"
+    )
+      .bind("home_notice")
+      .first();
+    if (!noticeRow) {
+      const defaultNotice =
+        "프로젝트별 접근 권한은 식별번호로 구분(보안 주의)\n파일당 업로드 용량 최대 30MB";
+      await env.DB.prepare(
+        "INSERT INTO settings (key, value) VALUES (?, ?)"
+      )
+        .bind("home_notice", defaultNotice)
+        .run();
+    }
+
     const plainRow = await env.DB.prepare(
       "SELECT value FROM settings WHERE key = ?"
     )
@@ -256,7 +271,9 @@ export async function onRequest(context) {
     const isPublicGet =
       method === "GET" &&
       (/^\/api\/projects\/[^/]+\/image$/.test(path) ||
-        /^\/api\/files\/[^/]+\/download$/.test(path));
+        /^\/api\/files\/[^/]+\/download$/.test(path) ||
+        /^\/api\/files\/[^/]+\/view$/.test(path) ||
+        /^\/api\/folders\/[^/]+\/zip$/.test(path));
 
     if (lockedFlag && !adminMode) {
       return new Response("Locked", { status: 403 });

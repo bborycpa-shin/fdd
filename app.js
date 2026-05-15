@@ -297,3 +297,66 @@ newProjectBtn.addEventListener("click", async () => {
 });
 
 loadProjects();
+loadNotice();
+
+const noticeEl = document.getElementById("home-notice");
+const noticeEditBtn = document.getElementById("notice-edit-btn");
+const noticeModal = document.getElementById("notice-edit-modal");
+const noticeTextarea = document.getElementById("notice-edit-textarea");
+const noticeCancel = document.getElementById("notice-edit-cancel");
+const noticeSave = document.getElementById("notice-edit-save");
+let currentNotice = "";
+
+function renderNotice(text) {
+  currentNotice = text || "";
+  if (!noticeEl) return;
+  const lines = currentNotice.length ? currentNotice.split("\n") : [];
+  if (lines.length === 0) {
+    noticeEl.innerHTML = '<li class="opacity-60">(안내 문구 없음)</li>';
+    return;
+  }
+  noticeEl.innerHTML = lines
+    .map((line) => `<li>• ${escapeHtml(line)}</li>`)
+    .join("");
+}
+
+async function loadNotice() {
+  try {
+    const res = await fetch("/api/notice");
+    if (!res.ok) return;
+    const data = await res.json();
+    renderNotice(data.notice || "");
+  } catch {}
+}
+
+if (noticeEditBtn) {
+  noticeEditBtn.addEventListener("click", () => {
+    noticeTextarea.value = currentNotice;
+    noticeModal.classList.remove("hidden");
+    noticeModal.classList.add("flex");
+  });
+}
+if (noticeCancel) {
+  noticeCancel.addEventListener("click", () => {
+    noticeModal.classList.add("hidden");
+    noticeModal.classList.remove("flex");
+  });
+}
+if (noticeSave) {
+  noticeSave.addEventListener("click", async () => {
+    const text = noticeTextarea.value;
+    try {
+      const res = await fetch("/api/notice", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ notice: text }),
+      });
+      if (!res.ok) throw new Error();
+      renderNotice(text);
+      noticeModal.classList.add("hidden");
+      noticeModal.classList.remove("flex");
+    } catch {
+      alert("저장 실패");
+    }
+  });
+}
