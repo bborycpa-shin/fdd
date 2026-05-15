@@ -79,6 +79,24 @@ async function ensureMigrations(env) {
         blocked_until INTEGER
       )`
     ).run();
+    await env.DB.prepare(
+      `CREATE TABLE IF NOT EXISTS activity_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        ts INTEGER NOT NULL DEFAULT (unixepoch()),
+        kind TEXT NOT NULL,
+        action TEXT NOT NULL,
+        success INTEGER NOT NULL DEFAULT 1,
+        actor TEXT,
+        actor_label TEXT,
+        ip TEXT,
+        target_id TEXT,
+        target_name TEXT,
+        detail TEXT
+      )`
+    ).run();
+    await env.DB.prepare(
+      "CREATE INDEX IF NOT EXISTS activity_logs_ts ON activity_logs(ts DESC)"
+    ).run();
 
     const adminRow = await env.DB.prepare(
       "SELECT value FROM settings WHERE key = ?"
@@ -185,6 +203,13 @@ async function ensureMigrations(env) {
         .run();
     }
 
+    try {
+      const cutoff = Math.floor(Date.now() / 1000) - 30 * 86400;
+      await env.DB.prepare("DELETE FROM activity_logs WHERE ts < ?")
+        .bind(cutoff)
+        .run();
+    } catch {}
+
     migrationsDone = true;
   } catch (e) {
     // ignore — retry on next request
@@ -243,15 +268,164 @@ async function isLocked(env) {
   return (await getSetting(env, "locked")) === "1";
 }
 
+function classifyRoute(method, path) {
+  let m;
+  if (method === "POST" && path === "/api/auth/login")
+    return { kind: "login", action: "user_login" };
+  if (method === "POST" && path === "/api/admin/login")
+    return { kind: "login", action: "admin_login" };
+
+  if (method === "POST" && path === "/api/admin/lock")
+    return { kind: "admin", action: "lock_toggle" };
+  if (method === "POST" && path === "/api/admin/password")
+    return { kind: "admin", action: "admin_password_change" };
+  if (method === "POST" && path === "/api/admin/user-password")
+    return { kind: "admin", action: "user_password_change" };
+  if (method === "POST" && path === "/api/admin/access-codes")
+    return { kind: "admin", action: "access_code_add" };
+  if ((m = /^\/api\/admin\/access-codes\/([^/]+)$/.exec(path))) {
+    if (method === "DELETE")
+      return { kind: "admin", action: "access_code_delete", targetId: m[1] };
+    if (method === "PUT")
+      return { kind: "admin", action: "access_code_edit", targetId: m[1] };
+  }
+  if (method === "POST" && /^\/api\/admin\/projects\/reorder$/.test(path))
+    return { kind: "admin", action: "projects_reorder" };
+  if (method === "PUT" && path === "/api/notice")
+    return { kind: "admin", action: "notice_edit" };
+
+  if (method === "POST" && path === "/api/projects")
+    return { kind: "project", action: "create" };
+  if ((m = /^\/api\/projects\/([^/]+)$/.exec(path))) {
+    if (method === "PATCH")
+      return { kind: "project", action: "edit", targetId: m[1] };
+    if (method === "DELETE")
+      return { kind: "project", action: "delete", targetId: m[1] };
+  }
+  if ((m = /^\/api\/projects\/([^/]+)\/image$/.exec(path))) {
+    if (method === "POST" || method === "PUT")
+      return { kind: "project", action: "set_image", targetId: m[1] };
+    if (method === "DELETE")
+      return { kind: "project", action: "delete_image", targetId: m[1] };
+  }
+
+  if (method === "POST" && path === "/api/files")
+    return { kind: "file", action: "upload" };
+  if ((m = /^\/api\/files\/([^/]+)$/.exec(path))) {
+    if (method === "PATCH")
+      return { kind: "file", action: "rename", targetId: m[1] };
+    if (method === "DELETE")
+      return { kind: "file", action: "delete", targetId: m[1] };
+  }
+  if ((m = /^\/api\/files\/([^/]+)\/download$/.exec(path)) && method === "GET")
+    return { kind: "file", action: "download", targetId: m[1] };
+  if ((m = /^\/api\/files\/([^/]+)\/view$/.exec(path)) && method === "GET")
+    return { kind: "file", action: "view", targetId: m[1] };
+
+  if (method === "POST" && path === "/api/folders")
+    return { kind: "folder", action: "create" };
+  if ((m = /^\/api\/folders\/([^/]+)$/.exec(path))) {
+    if (method === "PATCH")
+      return { kind: "folder", action: "rename", targetId: m[1] };
+    if (method === "DELETE")
+      return { kind: "folder", action: "delete", targetId: m[1] };
+  }
+  if ((m = /^\/api\/folders\/([^/]+)\/zip$/.exec(path)) && method === "GET")
+    return { kind: "folder", action: "zip_download", targetId: m[1] };
+
+  return null;
+}
+
+async function lookupTargetName(env, kind, id) {
+  if (!id) return null;
+  try {
+    let row;
+    if (kind === "file") {
+      row = await env.DB.prepare("SELECT name FROM files WHERE id = ?")
+        .bind(id)
+        .first();
+    } else if (kind === "folder") {
+      row = await env.DB.prepare("SELECT name FROM folders WHERE id = ?")
+        .bind(id)
+        .first();
+    } else if (kind === "project") {
+      row = await env.DB.prepare("SELECT name FROM projects WHERE id = ?")
+        .bind(id)
+        .first();
+    }
+    return row ? row.name : null;
+  } catch {
+    return null;
+  }
+}
+
+async function recordActivity(context, classified, response) {
+  if (!classified) return;
+  const env = context.env;
+  const request = context.request;
+  const success = response.status >= 200 && response.status < 400 ? 1 : 0;
+  const ip =
+    request.headers.get("CF-Connecting-IP") ||
+    (request.headers.get("X-Forwarded-For") || "").split(",")[0].trim() ||
+    "";
+
+  let actor = "";
+  let actorLabel = "";
+  if (context.data && context.data.isAdmin) {
+    actor = "admin";
+    actorLabel = "관리자";
+  } else if (context.data && context.data.accessCode) {
+    actor = context.data.accessCode.code || "";
+    actorLabel = context.data.accessCode.label || "";
+  }
+
+  const targetName = await lookupTargetName(
+    env,
+    classified.kind,
+    classified.targetId
+  );
+
+  try {
+    await env.DB.prepare(
+      "INSERT INTO activity_logs (kind, action, success, actor, actor_label, ip, target_id, target_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+    )
+      .bind(
+        classified.kind,
+        classified.action,
+        success,
+        actor,
+        actorLabel,
+        ip,
+        classified.targetId || null,
+        targetName
+      )
+      .run();
+  } catch {}
+}
+
 export async function onRequest(context) {
   await ensureMigrations(context.env);
 
   const url = new URL(context.request.url);
   const path = url.pathname;
   const method = context.request.method.toUpperCase();
+  const classified = classifyRoute(method, path);
 
   if (path.startsWith("/api/admin/") || path.startsWith("/api/auth/")) {
-    return context.next();
+    if (
+      path.startsWith("/api/admin/") &&
+      path !== "/api/admin/login" &&
+      path !== "/api/admin/status"
+    ) {
+      const adminMode = await isAdminRequest(context.request, context.env);
+      if (adminMode) {
+        context.data = context.data || {};
+        context.data.isAdmin = true;
+      }
+    }
+    const response = await context.next();
+    await recordActivity(context, classified, response).catch(() => {});
+    return response;
   }
 
   if (path.startsWith("/api/")) {
@@ -294,6 +468,10 @@ export async function onRequest(context) {
         return new Response("Admin required", { status: 403 });
       }
     }
+
+    const response = await context.next();
+    await recordActivity(context, classified, response).catch(() => {});
+    return response;
   }
 
   return context.next();

@@ -217,6 +217,7 @@
         </label>
       </div>
       <button id="admin-access-codes" style="width:100%;font-size:12px;padding:8px;background:#eff6ff;color:#1d4ed8;font-weight:600;border:1px solid #bfdbfe;border-radius:8px;margin-bottom:6px;cursor:pointer;">🔑 식별번호 관리</button>
+      <button id="admin-download-logs" style="width:100%;font-size:12px;padding:8px;background:#f8fafc;color:#0f172a;font-weight:500;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:6px;cursor:pointer;">📋 활동 로그 다운로드</button>
       <button id="admin-change-user-pw" style="width:100%;font-size:12px;padding:8px;background:white;color:#0f172a;font-weight:500;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:6px;cursor:pointer;">일반 비밀번호 변경</button>
       <button id="admin-change-pw" style="width:100%;font-size:12px;padding:8px;background:white;color:#0f172a;font-weight:500;border:1px solid #cbd5e1;border-radius:8px;margin-bottom:8px;cursor:pointer;">관리자 비밀번호 변경</button>
       <button id="admin-logout" style="width:100%;font-size:12px;padding:8px;background:white;color:#dc2626;font-weight:500;border:1px solid #cbd5e1;border-radius:8px;cursor:pointer;">관리자 로그아웃</button>
@@ -238,6 +239,27 @@
       }
     });
     document.getElementById("admin-access-codes").addEventListener("click", showAccessCodesUI);
+    document.getElementById("admin-download-logs").addEventListener("click", async () => {
+      try {
+        const res = await fetch("/api/admin/logs");
+        if (!res.ok) throw new Error("로그 다운로드 실패");
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, "0");
+        const dd = String(today.getDate()).padStart(2, "0");
+        a.download = `fdd-logs-${yyyy}${mm}${dd}.txt`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch (e) {
+        alert(`다운로드 실패: ${e.message || ""}`);
+      }
+    });
     document.getElementById("admin-change-pw").addEventListener("click", showAdminPasswordChangeUI);
     document.getElementById("admin-change-user-pw").addEventListener("click", showUserPasswordChangeUI);
     document.getElementById("admin-logout").addEventListener("click", () => {
