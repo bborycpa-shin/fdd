@@ -969,15 +969,49 @@ function viewFile(id) {
   }
   window.open(url, "_blank", "noopener");
 }
-function downloadFolderZip(id, name) {
+async function downloadFolderZip(id, name) {
   const url = `/api/folders/${encodeURIComponent(id)}/zip`;
   if (isKakaoInApp()) {
     openInExternalBrowser(url);
     return;
   }
+  const suggestedName = `${name}.zip`;
+  if (window.showSaveFilePicker) {
+    let handle;
+    try {
+      handle = await window.showSaveFilePicker({
+        suggestedName,
+        types: [
+          {
+            description: "ZIP archive",
+            accept: { "application/zip": [".zip"] },
+          },
+        ],
+      });
+    } catch (e) {
+      if (e && e.name === "AbortError") return;
+      // picker 미지원 등 → 폴백으로 진행
+    }
+    if (handle) {
+      try {
+        const res = await fetch(url);
+        if (!res.ok) {
+          const msg = (await res.text().catch(() => "")) || "다운로드 실패";
+          alert(msg);
+          return;
+        }
+        const writable = await handle.createWritable();
+        await res.body.pipeTo(writable);
+        return;
+      } catch (e) {
+        alert(`다운로드 실패: ${e.message || ""}`);
+        return;
+      }
+    }
+  }
   const a = document.createElement("a");
   a.href = url;
-  a.download = `${name}.zip`;
+  a.download = suggestedName;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
