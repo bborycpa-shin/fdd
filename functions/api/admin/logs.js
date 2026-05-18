@@ -59,8 +59,10 @@ function pad(n) {
   return n < 10 ? "0" + n : String(n);
 }
 
+const KST_OFFSET_SEC = 9 * 3600;
+
 function formatTs(ts) {
-  const d = new Date(ts * 1000);
+  const d = new Date((ts + KST_OFFSET_SEC) * 1000);
   const yyyy = d.getUTCFullYear();
   const mm = pad(d.getUTCMonth() + 1);
   const dd = pad(d.getUTCDate());
@@ -83,10 +85,10 @@ export async function onRequestGet({ request, env }) {
 
   const header =
     "# fdd 활동 로그\n" +
-    `# 생성 시각: ${formatTs(Math.floor(Date.now() / 1000))} (UTC)\n` +
+    `# 생성 시각: ${formatTs(Math.floor(Date.now() / 1000))} (KST)\n` +
     `# 보관 기간: 최근 30일\n` +
     `# 총 ${rows.length}건\n` +
-    "# 시간(UTC) | 종류 | 행위 | 결과 | 사용자 | IP | 대상\n" +
+    "# 시간(KST) | 종류 | 행위 | 결과 | 사용자 | IP | 대상\n" +
     "# ─────────────────────────────────────────────\n";
 
   const lines = rows.map((r) => {
@@ -114,7 +116,7 @@ export async function onRequestGet({ request, env }) {
 
   const body = header + lines.join("\n") + (lines.length ? "\n" : "");
 
-  const d = new Date();
+  const d = new Date(Date.now() + KST_OFFSET_SEC * 1000);
   const yyyy = d.getUTCFullYear();
   const mm = pad(d.getUTCMonth() + 1);
   const dd = pad(d.getUTCDate());
