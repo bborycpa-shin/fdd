@@ -124,7 +124,10 @@ export async function onRequestGet({ params, request, env, data }) {
       breadcrumb: [],
       folders: [],
       files: filesWithPath,
-      all_folders: allFolders || [],
+      all_folders: (allFolders || []).map((f) => ({
+        ...f,
+        direct_last_upload_at: directFolderLast.get(f.id) || 0,
+      })),
       recent_files: recentFiles,
     });
   }
@@ -201,7 +204,10 @@ export async function onRequestGet({ params, request, env, data }) {
     breadcrumb,
     folders,
     files,
-    all_folders: allFolders || [],
+    all_folders: (allFolders || []).map((f) => ({
+      ...f,
+      direct_last_upload_at: directFolderLast.get(f.id) || 0,
+    })),
     recent_files: recentFiles,
   });
 }

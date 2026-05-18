@@ -344,9 +344,12 @@ function renderTree(data) {
     const cls = isCurrent
       ? "bg-blue-600 text-white border-blue-600 font-semibold"
       : normalBg + " active:opacity-70";
+    const newBadge = isToday(node.direct_last_upload_at)
+      ? `<span class="ml-1 inline-flex items-center justify-center px-1 h-[14px] rounded bg-red-500 text-white text-[9px] font-bold leading-none" title="오늘 이 폴더에 새 파일이 올라왔어요">New</span>`
+      : "";
     const chip = `
       <a href="/project.html?id=${pid}&folder=${encodeURIComponent(node.id)}" class="inline-flex items-center px-2 py-0.5 rounded-full border transition ${cls}">
-        📁 ${escapeHtml(node.name)}
+        📁 ${escapeHtml(node.name)}${newBadge}
       </a>
     `;
     const childrenHtml =
