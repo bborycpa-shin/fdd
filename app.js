@@ -91,7 +91,7 @@ function dateHtml(unixSec, baseColorClass) {
   if (!unixSec) return "";
   const txt = formatDate(unixSec);
   if (isToday(unixSec)) {
-    return `<span class="text-red-600 font-bold">${txt} (오늘)</span>`;
+    return `<span class="text-red-600 font-bold">${txt} (New)</span>`;
   }
   return baseColorClass
     ? `<span class="${baseColorClass}">${txt}</span>`
@@ -475,7 +475,7 @@ function renderHomeRecentFiles(files) {
       const path = f.folder_path ? `📁 ${escapeHtml(f.folder_path)}` : "📁 (루트)";
       const uploader = f.uploader_label || f.uploader_access_code || "관리자";
       const dateStr = isToday(f.uploaded_at)
-        ? `<span class="text-red-600 font-bold">${formatDate(f.uploaded_at)} (오늘)</span>`
+        ? `<span class="text-red-600 font-bold">${formatDate(f.uploaded_at)} (New)</span>`
         : `<span class="text-slate-400">${formatDate(f.uploaded_at)}</span>`;
       return `
         <a href="/project.html?id=${encodeURIComponent(f.project_id)}${f.folder_id ? "&folder=" + encodeURIComponent(f.folder_id) : ""}" class="flex items-center gap-1.5 px-2 py-1.5 bg-white border border-slate-200 rounded-lg active:bg-slate-50 transition">

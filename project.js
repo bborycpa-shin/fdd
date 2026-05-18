@@ -214,7 +214,7 @@ function formatDateHtml(unixSec) {
   if (!unixSec) return "";
   const txt = formatDate(unixSec);
   if (isToday(unixSec)) {
-    return `<span class="text-red-600 font-bold">${txt} (오늘)</span>`;
+    return `<span class="text-red-600 font-bold">${txt} (New)</span>`;
   }
   return txt;
 }
