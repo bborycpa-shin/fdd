@@ -532,12 +532,15 @@ function render(data) {
     const sizeLine = f.size > 0
       ? ` · 💾 ${formatSize(f.size)}`
       : ` · 💾 비어있음`;
+    const newBadge = isToday(f.last_upload_at)
+      ? `<span class="shrink-0 inline-flex items-center justify-center px-1.5 h-[16px] rounded bg-red-500 text-white text-[9px] font-bold leading-none shadow-sm" title="오늘 새 파일이 올라왔어요">New</span>`
+      : "";
     items.push(`
       <div class="flex items-center gap-1.5 px-2 py-1 bg-amber-50 rounded-lg border border-amber-200">
         <a href="/project.html?id=${encodeURIComponent(data.project.id)}&folder=${encodeURIComponent(f.id)}" class="flex-1 flex items-center gap-1.5 min-w-0 active:opacity-60 transition">
           <span class="w-6 h-6 rounded bg-amber-200 text-amber-800 flex items-center justify-center text-xs shrink-0">📁</span>
           <div class="flex-1 min-w-0 leading-tight">
-            <p class="text-[11px] font-medium break-all text-amber-950">${escapeHtml(f.name)}</p>
+            <div class="flex items-center gap-1.5 min-w-0"><p class="text-[11px] font-medium break-all text-amber-950 min-w-0">${escapeHtml(f.name)}</p>${newBadge}</div>
             <p class="text-[9px] text-amber-700/70 mt-0.5">${formatDateHtml(f.created_at)}${creatorLine}${sizeLine}</p>
           </div>
         </a>

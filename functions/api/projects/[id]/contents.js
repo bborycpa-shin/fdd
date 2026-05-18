@@ -43,13 +43,15 @@ export async function onRequestGet({ params, request, env, data }) {
   (allFolders || []).forEach((f) => folderMapForPath.set(f.id, f));
 
   const { results: folderSizeRows } = await env.DB.prepare(
-    "SELECT folder_id, COALESCE(SUM(size), 0) AS s FROM files WHERE project_id = ? AND folder_id IS NOT NULL GROUP BY folder_id"
+    "SELECT folder_id, COALESCE(SUM(size), 0) AS s, MAX(uploaded_at) AS last_at FROM files WHERE project_id = ? AND folder_id IS NOT NULL GROUP BY folder_id"
   )
     .bind(projectId)
     .all();
   const directFolderSize = new Map();
+  const directFolderLast = new Map();
   (folderSizeRows || []).forEach((r) => {
     directFolderSize.set(r.folder_id, Number(r.s) || 0);
+    directFolderLast.set(r.folder_id, Number(r.last_at) || 0);
   });
 
   const childrenByParent = new Map();
@@ -68,6 +70,20 @@ export async function onRequestGet({ params, request, env, data }) {
     return sum;
   }
   (allFolders || []).forEach((f) => computeFolderSize(f.id));
+
+  const totalFolderLast = new Map();
+  function computeFolderLast(fid) {
+    if (totalFolderLast.has(fid)) return totalFolderLast.get(fid);
+    let mx = directFolderLast.get(fid) || 0;
+    const kids = childrenByParent.get(fid) || [];
+    for (const k of kids) {
+      const v = computeFolderLast(k);
+      if (v > mx) mx = v;
+    }
+    totalFolderLast.set(fid, mx);
+    return mx;
+  }
+  (allFolders || []).forEach((f) => computeFolderLast(f.id));
   function buildFolderPath(fid) {
     const parts = [];
     let cur = folderMapForPath.get(fid);
@@ -160,6 +176,7 @@ export async function onRequestGet({ params, request, env, data }) {
   const folders = (folderRows || []).map((f) => ({
     ...f,
     size: totalFolderSize.get(f.id) || 0,
+    last_upload_at: totalFolderLast.get(f.id) || 0,
   }));
 
   const files = folderId

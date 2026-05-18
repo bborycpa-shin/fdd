@@ -186,6 +186,9 @@ function renderProjects(projects) {
       const numBadge = p.display_number
         ? `<span class="shrink-0 inline-flex items-center justify-center min-w-[22px] h-[18px] px-1 rounded bg-white/80 border border-slate-300 text-[10px] font-bold text-slate-700">#${p.display_number}</span>`
         : "";
+      const newBadge = isToday(p.last_upload_at)
+        ? `<span class="shrink-0 inline-flex items-center justify-center px-1.5 h-[18px] rounded bg-red-500 text-white text-[10px] font-bold leading-none shadow-sm" title="오늘 새 파일이 올라왔어요">New</span>`
+        : "";
       const fileCount = p.file_count || 0;
       const totalSize = p.total_size || 0;
       const sizeBadge = fileCount > 0
@@ -197,7 +200,7 @@ function renderProjects(projects) {
       <button class="project-open flex-1 flex items-center gap-2 min-w-0 active:opacity-60 transition text-left" data-id="${p.id}">
         ${iconHtml}
         <div class="flex-1 min-w-0 leading-tight">
-          <div class="flex items-center gap-1.5 min-w-0">${numBadge}<p class="text-sm font-bold break-all text-slate-900 min-w-0">${escapeHtml(p.name)}</p></div>
+          <div class="flex items-center gap-1.5 min-w-0">${numBadge}<p class="text-sm font-bold break-all text-slate-900 min-w-0">${escapeHtml(p.name)}</p>${newBadge}</div>
           <div class="flex items-center gap-1.5 mt-0.5 flex-wrap">
             <p class="text-[10px] text-slate-500">${dateHtml(p.created_at, "text-slate-500")}</p>
             ${sizeBadge}

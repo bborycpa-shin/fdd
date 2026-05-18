@@ -28,19 +28,24 @@ export async function onRequestGet({ env, data }) {
   });
 
   const { results: sizeRows } = await env.DB.prepare(
-    "SELECT project_id, COALESCE(SUM(size), 0) AS total_size, COUNT(*) AS file_count FROM files GROUP BY project_id"
+    "SELECT project_id, COALESCE(SUM(size), 0) AS total_size, COUNT(*) AS file_count, MAX(uploaded_at) AS last_upload_at FROM files GROUP BY project_id"
   ).all();
   const sizeMap = new Map();
   (sizeRows || []).forEach((r) => {
     sizeMap.set(r.project_id, {
       total_size: Number(r.total_size) || 0,
       file_count: Number(r.file_count) || 0,
+      last_upload_at: Number(r.last_upload_at) || 0,
     });
   });
 
   return Response.json({
     projects: filtered.map((p) => {
-      const s = sizeMap.get(p.id) || { total_size: 0, file_count: 0 };
+      const s = sizeMap.get(p.id) || {
+        total_size: 0,
+        file_count: 0,
+        last_upload_at: 0,
+      };
       return {
         id: p.id,
         name: p.name,
@@ -50,6 +55,7 @@ export async function onRequestGet({ env, data }) {
         display_number: p.display_number || 0,
         total_size: s.total_size,
         file_count: s.file_count,
+        last_upload_at: s.last_upload_at,
       };
     }),
   });
