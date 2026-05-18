@@ -375,6 +375,29 @@ loadProjects();
 loadNotice();
 loadHomeRecentFiles();
 
+const homeRefreshBtn = document.getElementById("home-refresh-btn");
+if (homeRefreshBtn) {
+  homeRefreshBtn.addEventListener("click", async () => {
+    homeRefreshBtn.disabled = true;
+    const icon = homeRefreshBtn.querySelector(".refresh-icon");
+    if (icon) {
+      icon.style.transform = "rotate(360deg)";
+      icon.style.transition = "transform 0.6s";
+    }
+    try {
+      await Promise.all([loadProjects(), loadNotice(), loadHomeRecentFiles()]);
+    } finally {
+      homeRefreshBtn.disabled = false;
+      setTimeout(() => {
+        if (icon) {
+          icon.style.transition = "none";
+          icon.style.transform = "rotate(0deg)";
+        }
+      }, 650);
+    }
+  });
+}
+
 const noticeEl = document.getElementById("home-notice");
 const noticeEditBtn = document.getElementById("notice-edit-btn");
 const noticeModal = document.getElementById("notice-edit-modal");
