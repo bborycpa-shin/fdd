@@ -153,7 +153,11 @@ async function loadProjects() {
       });
       localStorage.setItem("fdd_project_colors", JSON.stringify(colorMap));
     } catch {}
-    renderProjects(cachedProjects);
+    if (typeof lastSearchQuery === "string" && lastSearchQuery) {
+      doSearch(lastSearchQuery);
+    } else {
+      renderProjects(cachedProjects);
+    }
   } catch (e) {
     projectList.innerHTML =
       '<p class="text-red-500 text-center text-sm py-6">불러오기 실패</p>';
@@ -370,6 +374,136 @@ newProjectBtn.addEventListener("click", async () => {
     alert("만들기 실패");
   }
 });
+
+const searchInput = document.getElementById("home-search-input");
+const searchClearBtn = document.getElementById("home-search-clear");
+let searchTimer = null;
+let searchSeq = 0;
+let lastSearchQuery = "";
+
+function renderSearchResults(query, data) {
+  const projects = data.projects || [];
+  const files = data.files || [];
+  const q = query;
+
+  if (projects.length === 0 && files.length === 0) {
+    projectList.innerHTML = `
+      <p class="text-slate-400 text-center text-xs py-6">
+        "<span class="text-slate-600 font-medium">${escapeHtml(q)}</span>"에 일치하는 결과가 없어요
+      </p>`;
+    return;
+  }
+
+  const parts = [];
+
+  if (projects.length > 0) {
+    parts.push(`
+      <div class="text-[10px] font-bold text-slate-500 mt-1 mb-1 pl-1">
+        📁 프로젝트 (${projects.length})
+      </div>
+    `);
+    const projHtml = projects
+      .map((p) => {
+        const color = projectColor(p);
+        const iconInner = p.has_image
+          ? `<img src="/api/projects/${encodeURIComponent(p.id)}/image" class="block rounded-md shadow-sm" alt="${escapeHtml(p.name)}" style="max-height:100%;max-width:100%;height:auto;width:auto;" />`
+          : `<div class="w-10 h-10 rounded-md bg-gradient-to-br ${color.grad} text-white text-lg flex items-center justify-center shadow-sm">📁</div>`;
+        const numBadge = p.display_number
+          ? `<span class="shrink-0 inline-flex items-center justify-center min-w-[22px] h-[18px] px-1 rounded bg-white/80 border border-slate-300 text-[10px] font-bold text-slate-700">#${p.display_number}</span>`
+          : "";
+        return `
+          <a href="/project.html?id=${encodeURIComponent(p.id)}" class="flex items-center gap-1.5 px-2 py-1.5 rounded-xl border border-white/60 shadow-sm active:opacity-70" style="background: linear-gradient(135deg, ${color.bgFrom}, ${color.bgTo})">
+            <div class="w-14 h-10 flex items-center justify-center shrink-0">${iconInner}</div>
+            <div class="flex-1 min-w-0 leading-tight flex items-center gap-1.5">
+              ${numBadge}
+              <p class="text-sm font-bold break-all text-slate-900 min-w-0">${escapeHtml(p.name)}</p>
+            </div>
+          </a>`;
+      })
+      .join("");
+    parts.push(`<div class="space-y-1.5">${projHtml}</div>`);
+  }
+
+  if (files.length > 0) {
+    parts.push(`
+      <div class="text-[10px] font-bold text-slate-500 mt-2 mb-1 pl-1">
+        📄 파일 (${files.length})
+      </div>
+    `);
+    const fileHtml = files
+      .map((f) => {
+        const icon = getHomeFileIcon(f.name);
+        const colorObj =
+          f.project_color_index !== null && f.project_color_index !== undefined
+            ? PROJECT_COLORS[f.project_color_index] || projectColorByHash(f.project_id)
+            : projectColorByHash(f.project_id);
+        const projTag = `<span class="inline-flex items-center gap-0.5 text-[9px] font-semibold text-slate-700 rounded px-1 py-px border border-white/70" style="background: linear-gradient(135deg, ${colorObj.bgFrom}, ${colorObj.bgTo})">${f.project_display_number ? "#" + f.project_display_number + " " : ""}${escapeHtml(f.project_name || "")}</span>`;
+        const path = f.folder_path ? `📁 ${escapeHtml(f.folder_path)}` : "📁 (루트)";
+        return `
+          <a href="/project.html?id=${encodeURIComponent(f.project_id)}${f.folder_id ? "&folder=" + encodeURIComponent(f.folder_id) : ""}" class="flex items-center gap-1.5 px-2 py-1.5 bg-white border border-slate-200 rounded-lg active:bg-slate-50 transition">
+            <span class="w-7 h-7 rounded ${icon.color} text-white text-[8px] font-bold flex items-center justify-center shrink-0">${icon.label}</span>
+            <div class="flex-1 min-w-0 leading-tight">
+              <p class="text-[11px] font-medium truncate text-slate-800">${escapeHtml(f.name)}</p>
+              <div class="flex items-center gap-1 flex-wrap mt-0.5">
+                ${projTag}
+                <span class="text-[9px] text-slate-500 truncate">${path}</span>
+              </div>
+              <p class="text-[9px] mt-0.5"><span class="text-slate-400">${formatDate(f.uploaded_at)} · ${formatSize(f.size)}</span></p>
+            </div>
+          </a>`;
+      })
+      .join("");
+    parts.push(`<div class="space-y-1">${fileHtml}</div>`);
+  }
+
+  projectList.innerHTML = parts.join("");
+}
+
+async function doSearch(query) {
+  const seq = ++searchSeq;
+  try {
+    const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+    if (seq !== searchSeq) return; // 더 최근 검색이 있으면 무시
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    if (seq !== searchSeq) return;
+    renderSearchResults(query, data);
+  } catch {
+    if (seq !== searchSeq) return;
+    projectList.innerHTML =
+      '<p class="text-red-500 text-center text-xs py-6">검색 중 오류가 발생했어요</p>';
+  }
+}
+
+function handleSearchInput() {
+  const q = (searchInput.value || "").trim();
+  lastSearchQuery = q;
+  if (searchClearBtn) {
+    if (q) searchClearBtn.classList.remove("hidden");
+    else searchClearBtn.classList.add("hidden");
+  }
+  if (searchTimer) clearTimeout(searchTimer);
+  if (!q) {
+    searchSeq++; // 진행 중인 검색 취소
+    if (cachedProjects) renderProjects(cachedProjects);
+    else loadProjects();
+    return;
+  }
+  searchTimer = setTimeout(() => doSearch(q), 200);
+}
+
+if (searchInput) {
+  searchInput.addEventListener("input", handleSearchInput);
+}
+if (searchClearBtn) {
+  searchClearBtn.addEventListener("click", () => {
+    if (searchInput) {
+      searchInput.value = "";
+      searchInput.focus();
+    }
+    handleSearchInput();
+  });
+}
 
 loadProjects();
 loadNotice();

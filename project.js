@@ -406,6 +406,10 @@ async function load() {
     if (!res.ok) throw new Error();
     const data = await res.json();
     cachedData = data;
+    // 데이터가 바뀌었을 수 있으므로 검색용 전체 파일 캐시 무효화
+    if (typeof searchAllFilesCache !== "undefined") {
+      searchAllFilesCache = null;
+    }
 
     const visibleIds = new Set(data.files.map((f) => f.id));
     for (const id of [...selectedFileIds]) {
@@ -514,6 +518,12 @@ function render(data) {
   renderProjectImage(data);
   renderTree(data);
   renderRecentFiles(data.recent_files || []);
+
+  // 검색 모드라면 본문은 검색 결과로 유지
+  if (typeof searchActive !== "undefined" && searchActive) {
+    refilterSearch();
+    return;
+  }
 
   const folders = sortItems(data.folders, "folder", "name_asc");
   const files = sortItems(data.files, "file", currentSort);
@@ -1297,5 +1307,204 @@ window.addEventListener("drop", async (e) => {
   if (files.length === 0) return;
   await uploadFiles(files);
 });
+
+// ===== 프로젝트 내부 검색 =====
+const projectSearchInput = document.getElementById("project-search-input");
+const projectSearchClearBtn = document.getElementById("project-search-clear");
+let searchAllFilesCache = null;
+let searchAllFilesLoading = null;
+let searchActive = false;
+let searchInputTimer = null;
+
+async function ensureAllFilesLoaded() {
+  if (searchAllFilesCache) return searchAllFilesCache;
+  if (searchAllFilesLoading) return searchAllFilesLoading;
+  searchAllFilesLoading = (async () => {
+    const url = `/api/projects/${encodeURIComponent(projectId)}/contents?all=1`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error();
+    const data = await res.json();
+    searchAllFilesCache = data.files || [];
+    return searchAllFilesCache;
+  })().finally(() => {
+    searchAllFilesLoading = null;
+  });
+  return searchAllFilesLoading;
+}
+
+function setSearchModeUI(active) {
+  searchActive = active;
+  if (active) {
+    sortBar.classList.add("hidden");
+    actionBar.classList.add("hidden");
+  } else {
+    sortBar.classList.remove("hidden");
+    updateActionBar();
+  }
+}
+
+function renderProjectSearchResults(query, files) {
+  if (!files || files.length === 0) {
+    contentsEl.innerHTML = `
+      <p class="text-slate-400 text-center text-xs py-6">
+        "<span class="text-slate-600 font-medium">${escapeHtml(query)}</span>"에 일치하는 파일이 없어요
+      </p>`;
+    return;
+  }
+
+  const myAccessCode = window.fddAccessCode || null;
+  const isAdmin =
+    window.fddAdmin && typeof window.fddAdmin.isAdmin === "function"
+      ? window.fddAdmin.isAdmin()
+      : false;
+
+  const rows = files.map((file) => {
+    const icon = getFileIcon(file.name);
+    const pathLine = file.folder_path
+      ? `<p class="text-[9px] text-blue-600/80 mt-0.5 truncate">📁 ${escapeHtml(file.folder_path)}</p>`
+      : `<p class="text-[9px] text-slate-400 mt-0.5">📁 (루트)</p>`;
+    const uploader = file.uploader_label || file.uploader_access_code || "관리자";
+    const uploaderLine = ` · 👤 ${escapeHtml(uploader)}`;
+    const isSameCode =
+      myAccessCode &&
+      file.uploader_access_code &&
+      file.uploader_access_code === myAccessCode;
+    const deleteVisible = isAdmin || isSameCode;
+    return `
+      <div class="search-result-row flex items-center gap-1.5 px-2 py-1 rounded-lg border border-slate-200 bg-white">
+        <div class="flex-1 flex items-start gap-1.5 min-w-0">
+          <span class="w-6 h-6 rounded ${icon.color} text-white flex items-center justify-center text-[7px] font-bold shrink-0 mt-0.5">${icon.label}</span>
+          <div class="flex-1 min-w-0 leading-tight">
+            <p class="text-[11px] font-medium break-all">${escapeHtml(file.name)}</p>
+            <p class="text-[9px] text-slate-400 mt-0.5">${formatSize(file.size)} · ${formatDateHtml(file.uploaded_at)}${uploaderLine}</p>
+            ${pathLine}
+          </div>
+        </div>
+        ${isViewable(file.name, file.content_type)
+          ? `<button class="search-view text-slate-400 active:text-blue-600 px-1 py-0.5 text-sm shrink-0 self-center" data-id="${file.id}" aria-label="보기">👁</button>`
+          : ""}
+        <button class="search-download text-slate-400 active:text-blue-600 px-1 py-0.5 text-sm shrink-0 self-center" data-id="${file.id}" data-name="${escapeHtml(file.name)}" aria-label="다운로드">⬇</button>
+        ${isAdmin
+          ? `<button class="search-rename text-slate-400 active:text-blue-600 px-1 py-0.5 text-sm shrink-0 self-center" data-id="${file.id}" data-name="${escapeHtml(file.name)}" aria-label="이름 바꾸기">✏</button>`
+          : ""}
+        ${deleteVisible
+          ? `<button class="search-delete text-slate-400 active:text-red-500 px-1 py-0.5 text-sm shrink-0 self-center" data-id="${file.id}" data-name="${escapeHtml(file.name)}" aria-label="파일 삭제">🗑</button>`
+          : ""}
+      </div>`;
+  });
+
+  contentsEl.innerHTML = rows.join("");
+
+  contentsEl.querySelectorAll(".search-view").forEach((btn) => {
+    btn.addEventListener("click", () => viewFile(btn.dataset.id));
+  });
+  contentsEl.querySelectorAll(".search-download").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      await downloadFile(btn.dataset.id, btn.dataset.name || "");
+    });
+  });
+  contentsEl.querySelectorAll(".search-rename").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const id = btn.dataset.id;
+      const current = btn.dataset.name;
+      const newName = prompt("새 파일 이름을 입력해주세요", current);
+      if (!newName || !newName.trim() || newName.trim() === current) return;
+      try {
+        const res = await fetch(`/api/files/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ name: newName.trim() }),
+        });
+        if (!res.ok) throw new Error();
+        searchAllFilesCache = null;
+        await load();
+        await refilterSearch();
+      } catch {
+        alert("이름 변경 실패");
+      }
+    });
+  });
+  contentsEl.querySelectorAll(".search-delete").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const id = btn.dataset.id;
+      const name = btn.dataset.name;
+      if (!confirm(`"${name}" 파일을 삭제할까요?`)) return;
+      try {
+        const res = await fetch(`/api/files/${id}`, { method: "DELETE" });
+        if (!res.ok) throw new Error();
+        searchAllFilesCache = null;
+        await load();
+        await refilterSearch();
+      } catch {
+        alert("삭제 실패");
+      }
+    });
+  });
+}
+
+function filterFilesByQuery(allFiles, query) {
+  const q = query.toLowerCase();
+  return allFiles
+    .filter((f) => String(f.name || "").toLowerCase().includes(q))
+    .sort((a, b) => a.name.localeCompare(b.name, "ko"));
+}
+
+async function refilterSearch() {
+  const q = ((projectSearchInput && projectSearchInput.value) || "").trim();
+  if (!q) return;
+  try {
+    const all = await ensureAllFilesLoaded();
+    const matched = filterFilesByQuery(all, q);
+    renderProjectSearchResults(q, matched);
+  } catch {
+    contentsEl.innerHTML =
+      '<p class="text-red-500 text-center text-xs py-6">검색 중 오류가 발생했어요</p>';
+  }
+}
+
+async function handleProjectSearchInput() {
+  const q = (projectSearchInput.value || "").trim();
+  if (projectSearchClearBtn) {
+    if (q) projectSearchClearBtn.classList.remove("hidden");
+    else projectSearchClearBtn.classList.add("hidden");
+  }
+  if (searchInputTimer) clearTimeout(searchInputTimer);
+
+  if (!q) {
+    setSearchModeUI(false);
+    if (cachedData) render(cachedData);
+    return;
+  }
+
+  setSearchModeUI(true);
+  contentsEl.innerHTML =
+    '<p class="text-slate-400 text-center text-xs py-4">검색 중...</p>';
+
+  searchInputTimer = setTimeout(async () => {
+    try {
+      const all = await ensureAllFilesLoaded();
+      const latest = (projectSearchInput.value || "").trim();
+      if (!latest) return;
+      const matched = filterFilesByQuery(all, latest);
+      renderProjectSearchResults(latest, matched);
+    } catch {
+      contentsEl.innerHTML =
+        '<p class="text-red-500 text-center text-xs py-6">검색 중 오류가 발생했어요</p>';
+    }
+  }, 120);
+}
+
+if (projectSearchInput) {
+  projectSearchInput.addEventListener("input", handleProjectSearchInput);
+}
+if (projectSearchClearBtn) {
+  projectSearchClearBtn.addEventListener("click", () => {
+    if (projectSearchInput) {
+      projectSearchInput.value = "";
+      projectSearchInput.focus();
+    }
+    handleProjectSearchInput();
+  });
+}
 
 load();
